@@ -1,0 +1,6 @@
+function s=fastsmooth(varargin)
+  a=varargin{1};
+  w=varargin{2};
+  type=1;
+  edge=1
+end
