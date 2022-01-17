@@ -77,9 +77,10 @@ ylabel('Altitude [km]','FontSize', 8,'FontName','Arial')
  xlabel(['Time [UT] ',num2str(y(1))],'FontSize', 8,'FontName','Arial')
  
 %% Time period of interest
-% n11 = datenum
-n11 = datenum(datetime(2007,12,27,15,00,00));
-n22 = datenum(datetime(2007,12,27,17,30,00));
+n11 = datenum(datetime(2007,12,27,03,00,00));
+n22 = datenum(datetime(2007,12,27,06,00,00));
+% n11 = datenum(datetime(2007,12,27,15,00,00));
+% n22 = datenum(datetime(2007,12,27,17,30,00));
 % n11 = n1;
 % n22 = n2;
 
@@ -135,23 +136,26 @@ ylabel('Altitude [km]','FontSize', 8,'FontName','Arial')
 xlabel(['Time [UT] ',num2str(y(1))],'FontSize', 8,'FontName','Arial')
 
 %% Split in time periods if there are time gaps
+max_duration = 1.5; %number of hours of which the FFT window can maximally exist
 %FFT requires evenly-spaced data without data gaps
 for i = 1:size(Time_datetime_new,2)-1
 delta_T(i) = Time_datetime_new(1,i+1) - Time_datetime_new(1,i);
 end
 idx_time_gap = find(delta_T > median(delta_T)+seconds(1));
-time_duration(1) = minutes(Time_new(1,idx_time_gap(1)) - Time_new(1,1))*60*24;
-% time_duration1(1) = Time_datetime_new(1,idx_time_gap(1)) - Time_datetime_new(1,1);
-for i = 2:size(idx_time_gap,2)
-    time_duration(i) = minutes(Time_new(1,idx_time_gap(i)) - Time_new(1,idx_time_gap(i-1)+1))*60*24;
-%     time_duration1(i) = Time_datetime_new(1,idx_time_gap(i)) - Time_datetime_new(1,idx_time_gap(i-1)+1);
-end
-time_duration(size(time_duration,2)+1) = minutes(Time_new(1,end) - Time_new(1,idx_time_gap(end)+1))*60*24;
-time_duration.Format = 'hh:mm:ss';
+if isempty(idx_time_gap) == 0
+    time_duration(1) = minutes(Time_new(1,idx_time_gap(1)) - Time_new(1,1))*60*24;
+    % time_duration1(1) = Time_datetime_new(1,idx_time_gap(1)) - Time_datetime_new(1,1);
+    for i = 2:size(idx_time_gap,2)
+        time_duration(i) = minutes(Time_new(1,idx_time_gap(i)) - Time_new(1,idx_time_gap(i-1)+1))*60*24;
+    %     time_duration1(i) = Time_datetime_new(1,idx_time_gap(i)) - Time_datetime_new(1,idx_time_gap(i-1)+1);
+    end
+    time_duration(size(time_duration,2)+1) = minutes(Time_new(1,end) - Time_new(1,idx_time_gap(end)+1))*60*24;
+    time_duration.Format = 'hh:mm:ss';
 
-% introduce extra time gaps if the time span between gaps exceeds 1 hour
+% introduce extra time gaps if the time span between gaps exceeds a certain
+% period (for example one hour)
 for i = 1:size(time_duration,2)
-    if time_duration(i) > hour(1)
+    if time_duration(i) > hours(max_duration)%hours(1)
         number_extra_gaps(i) = floor(hours(time_duration(i)));
     else ;
     end
@@ -181,6 +185,22 @@ i = size(time_duration,2);
             idx_time_gap1(j + i - 1 + sum(number_extra_gaps(1:i-1))) = find(Time_new(1,:) > Time_new(1,idx_time_gap(i-1)) + 1/24*j,1);
         end
     end
+    
+else 
+    % introduce extra time gaps if the time span between gaps exceeds a certain
+    % period (for example one hour)
+    time_duration(1) = minutes(Time_new(1,end) - Time_new(1,1))*60*24;
+    for i = 1:size(time_duration,2)
+        if time_duration(i) > hours(max_duration)%hours(1)
+            number_extra_gaps(i) = floor(hours(time_duration(i)));
+        else ;
+        end
+    end
+        for j = 1:number_extra_gaps(i)
+            idx_time_gap1(j) = find(Time_new(1,:) > Time_new(1,1) + 1/24*j,1);
+        end
+end
+
 
 % time_duration1(size(time_duration1,2)+1) = Time_datetime_new(1,end) - Time_datetime_new(1,idx_time_gap(end)+1);
 
@@ -215,6 +235,135 @@ end
 
 %% FFT to find any frequency peaks
 
+% low_lim = 200;
+% high_lim = 220;
+% for m = 1:size(alt_new1,2) %m represents the number of time periods without gaps in them
+%     keep('low_lim','high_lim','ne_new1','Time_new1','te_new1','alt_new1','m','delta_T') %to make sure that all variables underneath are only calculated for the correct time period
+%     alt_lim = low_lim:5:high_lim;
+%     for i = 1:size(alt_lim,2)-1
+%         alt_lim_mid(i) = (alt_lim(i)+alt_lim(i+1))/2;
+%     end
+%     Te_lim1 = te_new1{m};
+%     Ne_lim1 = ne_new1{m};
+%     Time_vector = Time_new1{m};
+% 
+%     %divide per hour?
+%     delta_T1 = round(3600/64);
+%     delta_T_array = 1:delta_T1:size(te_new1{m},2);
+% 
+%     % T = 1/Fs;
+%     T = round(seconds(median(delta_T))); %Time period over which EISCAT data is averaged
+%     Fs = 1/T; 
+%   
+%     for i = 1:size(alt_lim,2)-1
+%         test_Te{i} = Te_lim1(alt_new1{m}>alt_lim(i) & alt_new1{m}<alt_lim(i+1));
+%         test_Ne{i} = Ne_lim1(alt_new1{m}>alt_lim(i) & alt_new1{m}<alt_lim(i+1));
+%         
+%         if size(test_Te{i},1) > size(te_new1{m},2)/2 %Make sure that only the altitudes with a signal are used
+%             test_detrend_Te{i} = detrend(test_Te{i},1); %to remove the linear trend that shows up as a huge peak around 0 Hz 
+%             test_detrend_Ne{i} = detrend(test_Ne{i},1); %to remove the linear trend that shows up as a huge peak around 0 Hz 
+%             
+%             %Fast Fourier Transform for electron temperature
+%             NFFT_Te(i) = 2^nextpow2(size(test_Te{i},1)); %next power of 2 from length of Te (in order to improve the performance of fft)
+%             X_Hann_Te{i} = test_detrend_Te{i}.*hanning(size(test_Te{i},1));%hamming(size(test_Te{i},1));
+%             FFT1_Te{i} = fft(X_Hann_Te{i},NFFT_Te(i)); %%FFT transform
+% %             FFT1_Te{i} = fft(test_detrend_Te{i},NFFT_Te(i)); %%FFT transform
+%             P2_Te{i} = abs(FFT1_Te{i}/NFFT_Te(i)); %two sided spectrum (amplitude)
+%             P1_Te{i} = P2_Te{i}(1:NFFT_Te(i)/2+1); %single sided spectrum
+%             P1_Te_a = P1_Te{i};
+%             P1_Te_a(2:end-1) = 2*P1_Te_a(2:end-1); %multiply since spectrum is symmetric and combining both sides into one side to get the original amplitude
+%             P1_Te_1{i} = P1_Te_a;
+%             f_Te{i} = Fs*(0:(NFFT_Te(i)/2))/NFFT_Te(i); %frequency domain f
+%             
+%             % Fast Fourier Transform for electron density
+%             NFFT_Ne(i) = 2^nextpow2(size(test_Ne{i},1)); %next power of 2 from length of Te (in order to improve the performance of fft)
+%             X_Hann_Ne{i} = test_detrend_Ne{i}.*hann(size(test_Ne{i},1));%hamming(size(test_Ne{i},1));
+%             FFT1_Ne{i} = fft(X_Hann_Ne{i},NFFT_Ne(i)); %%FFT transform
+%             P2_Ne{i} = abs(FFT1_Ne{i}/NFFT_Ne(i)); %two sided spectrum (amplitude)
+%             P1_Ne{i} = P2_Ne{i}(1:NFFT_Ne(i)/2+1); %single sided spectrum
+%             P1_Ne_a = P1_Ne{i};
+%             P1_Ne_a(2:end-1) = 2*P1_Ne_a(2:end-1); %multiply since spectrum is symmetric and combining both sides into one side to get the original amplitude
+%             P1_Ne_1{i} = P1_Ne_a;
+%             f_Ne{i} = Fs*(0:(NFFT_Ne(i)/2))/NFFT_Ne(i); %frequency domain f
+%             
+%             % Plot the original and Fourier transformed signal
+% %             figure()
+% %             subplot(2,2,1)
+% %             plot(datetime(Time_vector(1,:),'ConvertFrom','datenum'),test_Te{i},datetime(Time_vector(1,:),'ConvertFrom','datenum'),test_detrend_Te{i},datetime(Time_vector(1,:),'ConvertFrom','datenum'),test_Te{i}-test_detrend_Te{i})
+% %             title('Original signal of Te, detrend version and trend')
+% %             legend('original','detrended version','trend')
+% %             xlabel('Time')
+% %             ylabel('Te (K)')
+% %             
+% %             subplot(2,2,2)
+% %             plot(f_Te{i},P1_Te_a)
+% %             title('Single-Sided Amplitude Spectrum of Te(t)')
+% %             xlim([-inf inf])
+% %             xlabel('f (Hz)')
+% %             ylabel('|P1(f)|')
+% %             
+% %             subplot(2,2,3)
+% %             plot(datetime(Time_vector(1,:),'ConvertFrom','datenum'),test_Ne{i},datetime(Time_vector(1,:),'ConvertFrom','datenum'),test_detrend_Ne{i},datetime(Time_vector(1,:),'ConvertFrom','datenum'),test_Ne{i}-test_detrend_Ne{i})
+% %             title('Original signal of Ne, detrend version and trend')
+% %             legend('original','detrended version','trend')
+% %             xlabel('Time')
+% %             ylabel('Te (K)')
+% % 
+% %             subplot(2,2,4)
+% %             plot(f_Ne{i},P1_Ne_a)
+% %             title('Single-Sided Amplitude Spectrum of Ne(t)')
+% %             xlim([-inf inf])
+% %             xlabel('f (Hz)')
+% %             ylabel('|P1(f)|')
+%             
+%             clear P1_Te_a P1_Ne_a
+%         else ;
+%         end
+%     end
+%       
+%     % Plot altitude FFT signals stacked 
+%     figure()
+%     suptitle(['FFT from ' datestr(datetime(Time_vector(1,1),'ConvertFrom','datenum')) ' to ' datestr(datetime(Time_vector(1,end),'ConvertFrom','datenum'))])
+%     subplot(2,1,1)
+%     hold on
+%     for i = 1:size(alt_lim,2)-2
+%         if isempty(test_Te{i}) == 0
+%             plot(f_Te{i},P1_Te_1{i})
+%             idx_alt(i) = find(isempty(test_Te{i}) == 0);
+%         else ;
+%         end 
+%     end
+% %     title('Single-Sided Amplitude Spectrum of Te(t)')
+%     xL=xlim;
+%     yL=ylim;
+%     text(0.99*xL(2),0.99*yL(2),"Te",'HorizontalAlignment','right','VerticalAlignment','top')
+%     xlim([-inf inf])
+%     xlabel('f (Hz)')
+%     ylabel('|P1(f)|')
+%     legend(strsplit(num2str(alt_lim_mid(find(idx_alt(:)==1)))))
+%     
+%     subplot(2,1,2)
+%     hold on
+%     for i = 1:size(alt_lim,2)-2
+%         if isempty(test_Ne{i}) == 0
+%             plot(f_Ne{i},P1_Ne_1{i})
+%         else 
+%         end;
+%     end
+% %     title('Single-Sided Amplitude Spectrum of Ne(t)')
+%     xL=xlim;
+%     yL=ylim;
+%     text(0.99*xL(2),0.99*yL(2),"Ne",'HorizontalAlignment','right','VerticalAlignment','top')
+%     xlim([-inf inf])
+%     xlabel('f (Hz)')
+%     ylabel('|P1(f)|')
+%     legend(strsplit(num2str(alt_lim_mid(find(idx_alt(:)==1)))))
+%     
+% %     clear Time_vector
+% end
+
+%% Try with spectrogram (to use window overlap)
+
 low_lim = 200;
 high_lim = 220;
 for m = 1:size(alt_new1,2) %m represents the number of time periods without gaps in them
@@ -234,114 +383,24 @@ for m = 1:size(alt_new1,2) %m represents the number of time periods without gaps
     % T = 1/Fs;
     T = round(seconds(median(delta_T))); %Time period over which EISCAT data is averaged
     Fs = 1/T; 
+    windowOverlap = [10, 20, 30]; 
   
     for i = 1:size(alt_lim,2)-1
         test_Te{i} = Te_lim1(alt_new1{m}>alt_lim(i) & alt_new1{m}<alt_lim(i+1));
         test_Ne{i} = Ne_lim1(alt_new1{m}>alt_lim(i) & alt_new1{m}<alt_lim(i+1));
-        
         if size(test_Te{i},1) > size(te_new1{m},2)/2 %Make sure that only the altitudes with a signal are used
-            test_detrend_Te{i} = detrend(test_Te{i},1); %to remove the linear trend that shows up as a huge peak around 0 Hz 
-            test_detrend_Ne{i} = detrend(test_Ne{i},1); %to remove the linear trend that shows up as a huge peak around 0 Hz 
             
-            %Fast Fourier Transform for electron temperature
-            NFFT_Te(i) = 2^nextpow2(size(test_Te{i},1)); %next power of 2 from length of Te (in order to improve the performance of fft)
-            X_Hann_Te{i} = test_detrend_Te{i}.*hann(size(test_Te{i},1));%hamming(size(test_Te{i},1));
-            FFT1_Te{i} = fft(X_Hann_Te{i},NFFT_Te(i)); %%FFT transform
-%             FFT1_Te{i} = fft(test_detrend_Te{i},NFFT_Te(i)); %%FFT transform
-            P2_Te{i} = abs(FFT1_Te{i}/NFFT_Te(i)); %two sided spectrum (amplitude)
-            P1_Te{i} = P2_Te{i}(1:NFFT_Te(i)/2+1); %single sided spectrum
-            P1_Te_a = P1_Te{i};
-            P1_Te_a(2:end-1) = 2*P1_Te_a(2:end-1); %multiply since spectrum is symmetric and combining both sides into one side to get the original amplitude
-            P1_Te_1{i} = P1_Te_a;
-            f_Te{i} = Fs*(0:(NFFT_Te(i)/2))/NFFT_Te(i); %frequency domain f
-            
-            % Fast Fourier Transform for electron density
-            NFFT_Ne(i) = 2^nextpow2(size(test_Ne{i},1)); %next power of 2 from length of Te (in order to improve the performance of fft)
-            X_Hann_Ne{i} = test_detrend_Ne{i}.*hann(size(test_Ne{i},1));%hamming(size(test_Ne{i},1));
-            FFT1_Ne{i} = fft(X_Hann_Ne{i},NFFT_Ne(i)); %%FFT transform
-            P2_Ne{i} = abs(FFT1_Ne{i}/NFFT_Ne(i)); %two sided spectrum (amplitude)
-            P1_Ne{i} = P2_Ne{i}(1:NFFT_Ne(i)/2+1); %single sided spectrum
-            P1_Ne_a = P1_Ne{i};
-            P1_Ne_a(2:end-1) = 2*P1_Ne_a(2:end-1); %multiply since spectrum is symmetric and combining both sides into one side to get the original amplitude
-            P1_Ne_1{i} = P1_Ne_a;
-            f_Ne{i} = Fs*(0:(NFFT_Ne(i)/2))/NFFT_Ne(i); %frequency domain f
-            
-            % Plot the original and Fourier transformed signal
-%             figure()
-%             subplot(2,2,1)
-%             plot(datetime(Time_vector(1,:),'ConvertFrom','datenum'),test_Te{i},datetime(Time_vector(1,:),'ConvertFrom','datenum'),test_detrend_Te{i},datetime(Time_vector(1,:),'ConvertFrom','datenum'),test_Te{i}-test_detrend_Te{i})
-%             title('Original signal of Te, detrend version and trend')
-%             legend('original','detrended version','trend')
-%             xlabel('Time')
-%             ylabel('Te (K)')
-%             
-%             subplot(2,2,2)
-%             plot(f_Te{i},P1_Te_a)
-%             title('Single-Sided Amplitude Spectrum of Te(t)')
-%             xlim([-inf inf])
-%             xlabel('f (Hz)')
-%             ylabel('|P1(f)|')
-%             
-%             subplot(2,2,3)
-%             plot(datetime(Time_vector(1,:),'ConvertFrom','datenum'),test_Ne{i},datetime(Time_vector(1,:),'ConvertFrom','datenum'),test_detrend_Ne{i},datetime(Time_vector(1,:),'ConvertFrom','datenum'),test_Ne{i}-test_detrend_Ne{i})
-%             title('Original signal of Ne, detrend version and trend')
-%             legend('original','detrended version','trend')
-%             xlabel('Time')
-%             ylabel('Te (K)')
-% 
-%             subplot(2,2,4)
-%             plot(f_Ne{i},P1_Ne_a)
-%             title('Single-Sided Amplitude Spectrum of Ne(t)')
-%             xlim([-inf inf])
-%             xlabel('f (Hz)')
-%             ylabel('|P1(f)|')
-            
-            clear P1_Te_a P1_Ne_a
+            N_Te(i) = length(test_Te{i});
+            N_1(i) = N_Te(i)/8;%2^nextpow2(N_Te(i)); %same for Te and Ne
+%             f{i} = Fs*(0:(N_1(i)/2))/N_1(i); %frequency domain f
+            f{i} = linspace(0,Fs/2,100);
+
+            for l = 1:length(windowOverlap)
+                figure()
+                spectrogram(test_Te{i},hanning(N_1(i)),[],f{i},Fs,'yaxis')
+                title(['window overlap = ' num2str(l)])
+            end
         else ;
         end
     end
-      
-    % Plot altitude FFT signals stacked 
-    figure()
-    suptitle(['FFT from ' datestr(datetime(Time_vector(1,1),'ConvertFrom','datenum')) ' to ' datestr(datetime(Time_vector(1,end),'ConvertFrom','datenum'))])
-    subplot(2,1,1)
-    hold on
-    for i = 1:size(alt_lim,2)-2
-        if isempty(test_Te{i}) == 0
-            plot(f_Te{i},P1_Te_1{i})
-            idx_alt(i) = find(isempty(test_Te{i}) == 0);
-        else ;
-        end 
-    end
-%     title('Single-Sided Amplitude Spectrum of Te(t)')
-    xL=xlim;
-    yL=ylim;
-    text(0.99*xL(2),0.99*yL(2),"Te",'HorizontalAlignment','right','VerticalAlignment','top')
-    xlim([-inf inf])
-    xlabel('f (Hz)')
-    ylabel('|P1(f)|')
-    legend(strsplit(num2str(alt_lim_mid(find(idx_alt(:)==1)))))
-    
-    subplot(2,1,2)
-    hold on
-    for i = 1:size(alt_lim,2)-2
-        if isempty(test_Ne{i}) == 0
-            plot(f_Ne{i},P1_Ne_1{i})
-        else 
-        end;
-    end
-%     title('Single-Sided Amplitude Spectrum of Ne(t)')
-    xL=xlim;
-    yL=ylim;
-    text(0.99*xL(2),0.99*yL(2),"Ne",'HorizontalAlignment','right','VerticalAlignment','top')
-    xlim([-inf inf])
-    xlabel('f (Hz)')
-    ylabel('|P1(f)|')
-    legend(strsplit(num2str(alt_lim_mid(find(idx_alt(:)==1)))))
-    
-%     clear Time_vector
 end
-
-%% Try with spectrogram (to use window overlap)
-
-
