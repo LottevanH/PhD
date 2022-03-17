@@ -26,26 +26,27 @@ clear all
 %   errs2d_id  = {'var_Ne' 'var_Tr' 'var_Ti' 'var_Vi' 'var_Collf'}
 
 % [Time,par2D,par1D,rpar2D,err2D,errs2d]=load_param_hdf5('D:\EISCAT_data\analyzed\eiscat_website_hdf5\EISCAT_2019-11-20_folke_64@42mb.hdf5');
-[Time,par2D,par1D,rpar2D,err2D,errs2d]=load_param_hdf5('C:\Svalbard\PhD\Data\Test_data\EISCAT_2019-11-20_folke_64@42mb.hdf5');
+[Time,par2D,par1D,rpar2D,err2D,errs2d]=load_param_hdf5('C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\ULF_waves_events_currently_unexamined\1998_12_20\analysed_10min\hdf5_folder\EISCAT_1998-12-20_gup3c_60@32m\EISCAT_1998-12-20_gup3c_60@32m.hdf5');
 
 [y,m,d,h,mn,s]=datevec(Time(1,:));
 ut_time=h+mn/60.;
 alt=par2D(:,:,2);
 ne=par2D(:,:,3);
-te=par2D(:,:,4).*par2D(:,:,5);
+te=par2D(:,:,4);%.*par2D(:,:,5);
 ti=par2D(:,:,5);
 
-n1 = datenum([2019 11 20 16 00 00]);
-n2 = datenum([2019 11 20 20 00 00]);
+n1 = Time(1,1); %datenum([2019 11 20 16 00 00]);
+n2 = Time(1,end); %datenum([2019 11 20 20 00 00]);
 xLimits=[n1 n2];
 yLimits=[100 600];
 f1=figure;
 colormap jet;
 
 subplot(3,1,1);
-pcolor(datenum([y(:),m(:),d(:),h(:),mn(:),s(:)]),alt,log10(ne)),shading flat;
+pcolor(datenum([y(:),m(:),d(:),h(:),mn(:),s(:)]),alt,te),shading flat;
 % give the limits of the colourbar
-caxis([10 11]);
+% caxis([10 11]);
+% caxis([0 4000]);
 % % Add colorbar to the right of the plot
 colorbar;
 set(get(colorbar,'label'),'FontSize', 8,'string','Electron density (m^{-3})')

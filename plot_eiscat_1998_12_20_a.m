@@ -4,7 +4,7 @@ close all
 addpath('C:\Github\PhD\functions');
 
 %%
-[Time,par2D,par1D,rpar2D,err2D,errs2d]=load_param_hdf5('C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\Paper_Lisa_2017\EISCAT_2007-12-27_ipy_60@42m.hdf5');
+[Time,par2D,par1D,rpar2D,err2D,errs2d]=load_param_hdf5('C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\ULF_waves_events_currently_unexamined\1998_12_20\analysed_01_04\analysed_1998_12_20_01_till_04_60s_integration\hdf5_folder\EISCAT_1998-12-20_gup3c_60@32m\EISCAT_1998-12-20_gup3c_60@32m.hdf5');
 % [Time,par2D,par1D,rpar2D,err2D,errs2d]=load_param_hdf5('C:\Svalbard\PhD\Data\Test_data\EISCAT_2019-11-20_folke_64@42mb.hdf5');
 % [Time,par2D,par1D,rpar2D,err2D,errs2d]=load_param_hdf5('C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\ULF_waves_events_currently_unexamined\1998_12_20\EISCAT_1998-12-20_gup3_aclp_60@32m.hdf5');
 
@@ -13,7 +13,7 @@ ut_time=h+mn/60.;
 alt=par2D(:,:,2);
 ne=par2D(:,:,3);
 ne(find(ne<0)) = NaN; %in case of negative electron densities (physically impossible..)
-te=par2D(:,:,4);%.*par2D(:,:,5);
+te=par2D(:,:,4).*par2D(:,:,5);
 ti=par2D(:,:,5);
 alt_min = min(alt,[],'all');
 Time_datetime = datetime(Time,'ConvertFrom','datenum'); %does something weird for 
@@ -77,12 +77,12 @@ ylabel('Altitude [km]','FontSize', 8,'FontName','Arial')
  xlabel(['Time [UT] ',num2str(y(1))],'FontSize', 8,'FontName','Arial')
  
 %% Time period of interest
-n11 = datenum(datetime(2007,12,27,03,00,00));
-n22 = datenum(datetime(2007,12,27,06,00,00));
+% n11 = datenum(datetime(2007,12,27,03,00,00));
+% n22 = datenum(datetime(2007,12,27,06,00,00));
 % n11 = datenum(datetime(2007,12,27,15,00,00));
 % n22 = datenum(datetime(2007,12,27,17,30,00));
-% n11 = n1;
-% n22 = n2;
+n11 = n1;
+n22 = n2;
 
 idx_time_start = find(Time(1,:) > n11,1);
 idx_time_end = find(Time(1,:) < n22,1,'last');
@@ -136,7 +136,7 @@ ylabel('Altitude [km]','FontSize', 8,'FontName','Arial')
 xlabel(['Time [UT] ',num2str(y(1))],'FontSize', 8,'FontName','Arial')
 
 %% Split in time periods if there are time gaps
-max_duration = 3; %number of hours of which the FFT window can maximally exist
+max_duration = 1.5; %number of hours of which the FFT window can maximally exist
 %FFT requires evenly-spaced data without data gaps
 for i = 1:size(Time_datetime_new,2)-1
 delta_T(i) = Time_datetime_new(1,i+1) - Time_datetime_new(1,i);
@@ -155,7 +155,7 @@ if isempty(idx_time_gap) == 0
 % introduce extra time gaps if the time span between gaps exceeds a certain
 % period (for example one hour)
 for i = 1:size(time_duration,2)
-    if time_duration(i) > hour(max_duration)%hour(1)
+    if time_duration(i) > hours(max_duration)%hours(1)
         number_extra_gaps(i) = floor(hours(time_duration(i)));
     else ;
     end
@@ -189,8 +189,9 @@ i = size(time_duration,2);
 else 
     % introduce extra time gaps if the time span between gaps exceeds a certain
     % period (for example one hour)
+    time_duration(1) = minutes(Time_new(1,end) - Time_new(1,1))*60*24;
     for i = 1:size(time_duration,2)
-        if time_duration(i) > hour(max_duration)%hour(1)
+        if time_duration(i) > hours(max_duration)%hours(1)
             number_extra_gaps(i) = floor(hours(time_duration(i)));
         else ;
         end
@@ -396,7 +397,8 @@ for m = 1:size(alt_new1,2) %m represents the number of time periods without gaps
 
             for l = 1:length(windowOverlap)
                 figure()
-                spectrogram(test_Te{i},hanning(N_1(i)),[],f{i},Fs,'yaxis')
+%                 spectrogram(test_Te{i},hanning(N_1(i)),[],f{i},Fs,'yaxis')
+                spectrogram(test_Te{i},hanning(N_1(i)),[],[],[],'yaxis')
                 title(['window overlap = ' num2str(l)])
             end
         else ;

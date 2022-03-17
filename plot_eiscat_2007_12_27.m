@@ -13,7 +13,7 @@ ut_time=h+mn/60.;
 alt=par2D(:,:,2);
 ne=par2D(:,:,3);
 ne(find(ne<0)) = NaN; %in case of negative electron densities (physically impossible..)
-te=par2D(:,:,4);%.*par2D(:,:,5);
+te=par2D(:,:,4).*par2D(:,:,5);
 ti=par2D(:,:,5);
 alt_min = min(alt,[],'all');
 Time_datetime = datetime(Time,'ConvertFrom','datenum'); %does something weird for 
@@ -397,7 +397,8 @@ for m = 1:size(alt_new1,2) %m represents the number of time periods without gaps
 
             for l = 1:length(windowOverlap)
                 figure()
-                spectrogram(test_Te{i},hanning(N_1(i)),[],f{i},Fs,'yaxis')
+%                 spectrogram(test_Te{i},hanning(N_1(i)),[],f{i},Fs,'yaxis')
+                spectrogram(test_Te{i},hanning(N_1(i)),[],[],[],'yaxis')
                 title(['window overlap = ' num2str(l)])
             end
         else ;
