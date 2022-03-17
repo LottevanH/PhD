@@ -244,7 +244,7 @@ end
 
 %% spectrogram of interpolated values for E and F region
 E_region_lim = 110; %upper limit E-region/lower limit F-region
-F_region_lim = 400; %upper limit F-region
+F_region_lim = 300; %upper limit F-region
 keep('E_region_lim','F_region_lim','te_interp','S1','F1','T1','P1','low_lim','high_lim','ne1','Time1','Time_datetime1','te1','alt1','m','delta_T','test_Te','test_Ne','N_1','N_Te','windowOverlap') %to make sure that all variables underneath are only calculated for the correct time period
 T = round(seconds(median(delta_T))); %Time period over which EISCAT data is averaged
 Fs = 1/T;  
