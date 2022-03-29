@@ -4,9 +4,9 @@ close all
 addpath('C:\Github\PhD\functions');
 
 %% specify which filename to process
-% filename = 'C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\ULF_waves_events_currently_unexamined\2017_12_18\EISCAT_2017-12-18_bella_60@vhf.hdf5';
+filename = 'C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\ULF_waves_events_currently_unexamined\2017_12_18\EISCAT_2017-12-18_bella_60@vhf.hdf5';
 % filename = 'C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\ULF_waves_events_currently_unexamined\1998_12_20\analysed_01_04\analysed_1998_12_20_01_till_04_60s_integration\hdf5_folder\EISCAT_1998-12-20_gup3c_60@32m\EISCAT_1998-12-20_gup3c_60@32m.hdf5';
-filename = 'C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\Paper_Lisa_2017\EISCAT_2007-12-27_ipy_60@42m.hdf5';
+% filename = 'C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\Paper_Lisa_2017\EISCAT_2007-12-27_ipy_60@42m.hdf5';
 
 %% extract variables and get metadeta info
 [Time,par2D,par1D,rpar2D,err2D,errs2d]=load_param_hdf5(filename);
@@ -68,15 +68,16 @@ datetick('x',13,'keeplimits')
 ylabel('Altitude [km]','FontSize', 8,'FontName','Arial') % Add labels to axes and colorbar
 xlabel(['Time [UT] ',num2str(y(1))],'FontSize', 8,'FontName','Arial')
  
-%% Time period of interest
-n11 = datenum(datetime(2007,12,27,15,00,00)); %in case of limited time
-n22 = datenum(datetime(2007,12,27,17,30,00)); %in case of limited time
+%% Time period of interest 
+%analyse from one hour before start interesting event
+% n11 = datenum(datetime(2007,12,27,14,00,00)); %in case of limited time
+% n22 = datenum(datetime(2007,12,27,18,30,00)); %in case of limited time
 % n11 = datenum(datetime(2017,12,18,02,00,00)); %in case of limited time
 % n22 = datenum(datetime(2017,12,18,07,00,00)); %in case of limited time
 % n11 = datenum(datetime(1998,12,20,01,00,00)); %in case of limited time
 % n22 = datenum(datetime(1998,12,20,04,00,00)); %in case of limited time
-% n11 = n1;
-% n22 = n2;
+n11 = n1;
+n22 = n2;
 
 idx_time_start = find(Time(1,:) > n11,1);
 idx_time_end = find(Time(1,:) < n22,1,'last');
@@ -137,7 +138,7 @@ elseif length(idx_time_gap) > 1 %more than one time gap
             alt_new(:,idx_time_gap(i)+number_of_NaN(i):idx_time_gap(i+1)-1+number_of_NaN(i)-2) = alt_poi(:,idx_time_gap(i)+2:idx_time_gap(i+1)-1);
             Time_new(:,idx_time_gap(i)+number_of_NaN(i):idx_time_gap(i+1)-1+number_of_NaN(i)-2) = Time_poi(:,idx_time_gap(i)+2:idx_time_gap(i+1)-1); 
             ti_new(:,idx_time_gap(i)+number_of_NaN(i):idx_time_gap(i+1)-1+number_of_NaN(i)-2) = ti_poi(:,idx_time_gap(i)+2:idx_time_gap(i+1)-1);
-        elseif (i > 1) && (i < length(idx_time_gap)) %%check this one!
+        elseif (i > 1) && (i < length(idx_time_gap)) 
             number_of_NaN(i) = round((delta_T(idx_time_gap(i))+delta_T(idx_time_gap(i) + 1 ))/median(delta_T));
             ne_new(:,idx_time_gap(i)+sum(number_of_NaN(1:i-1)-i):idx_time_gap(i)+sum(number_of_NaN(1:i))-i) = NaN;
             te_new(:,idx_time_gap(i)+sum(number_of_NaN(1:i-1)-i):idx_time_gap(i)+sum(number_of_NaN(1:i))-i) = NaN;
@@ -245,7 +246,6 @@ end
 %% spectrogram of interpolated values for E and F region
 E_region_lim = 110; %upper limit E-region/lower limit F-region
 F_region_lim = 400; %upper limit F-region
-keep('E_region_lim','F_region_lim','te_interp','S1','F1','T1','P1','low_lim','high_lim','ne1','Time1','Time_datetime1','te1','alt1','m','delta_T','test_Te','test_Ne','N_1','N_Te','windowOverlap') %to make sure that all variables underneath are only calculated for the correct time period
 T = round(seconds(median(delta_T))); %Time period over which EISCAT data is averaged
 Fs = 1/T;  
 f = linspace(0,Fs/2,500); %number of bins in y axis (number of frequency bins)
@@ -261,100 +261,144 @@ else %time period is shorter than 1 hour
     N_1 = length(te_av);
 end
 windowOverlap = N_1 - 10;
-[S_Eregion,F_Eregion,TT_Eregion,P_Eregion] = spectrogram(te_av(1,:),hanning(N_1),windowOverlap,f,Fs,'yaxis'); %Calculate for E-region              
-[S_Fregion,F_Fregion,TT_Fregion,P_Fregion] = spectrogram(te_av(2,:),hanning(N_1),windowOverlap,f,Fs,'yaxis'); %Calculate for F-region   
+[S_Eregion,F_Eregion,T_Eregion,P_Eregion] = spectrogram(te_av(1,:),hanning(N_1),windowOverlap,f,Fs,'yaxis'); %Calculate for E-region              
+[S_Fregion,F_Fregion,T_Fregion,P_Fregion] = spectrogram(te_av(2,:),hann(N_1),windowOverlap,f,Fs,'yaxis'); %Calculate for F-region   
 
 %determine which unit of time is needed for the x-axis
 lab = 'Time (secs)';
-if TT_Fregion(end) > 60*60
-   TT_Fregion = TT_Fregion/(60*60);
+if T_Fregion(end) > 60*60
+   T_Fregion = T_Fregion/(60*60);
    lab = 'Time (hours)';
-elseif TT_Fregion(end) > 60
-   TT_Fregion = TT_Fregion/60;
+elseif T_Fregion(end) > 60
+   T_Fregion = T_Fregion/60;
    lab = 'Time (mins)';
 end
+TT_Fregion_datetime = Time_datetime_new(1,1) + hours(T_Fregion);
+formatOut = 'HH:mm:ss';
+xlabels = cellstr(TT_Fregion_datetime,formatOut);
 
 % figure()
 % h = imagesc(TT_Eregion,F_Eregion,10*log10(P_Eregion));%.*F);%,[-156.5 95.8] );
-% xlabel(lab)
+% xlabel('Time')
 % ylabel('Frequency (Hz)')
-% title(strcat(['E-region; Time ',datestr(Time_datetime_new(1),'HH:MM:SS'),'-',datestr(Time_datetime_new(end),'HH:MM:SS')]))
+% title(strcat(['E-region; ',datestr(Time_datetime_new(1),'yyyy-mm-dd')]))
 % colorbar;
 % set(gca,'YDir','normal');
 % set(get(colorbar,'label'),'FontSize', 12,'string','(dB/Hz)')
+% xtcks = xticks;
+% [~,pos_xtcks] = intersect(TT_Fregion,xtcks); %to find out which values correspond to the xtick locations
+% set(gca, 'XTick',xticks, 'XTickLabel', xlabels(pos_xtcks)); %to put datetime ticks on the x-axis
 
 figure()
-h = imagesc(TT_Fregion,F_Fregion,10*log10(P_Fregion));%.*F);%,[-156.5 95.8] );
-xlabel(lab)
+h = imagesc(T_Fregion,F_Fregion,10*log10(P_Fregion));%datenum(TT_Fregion_datetime),F_Fregion,10*log10(P_Fregion));
+xlabel('Time')
 ylabel('Frequency (Hz)')
-title(strcat(['F-region; Time ',datestr(Time_datetime_new(1),'HH:MM:SS'),'-',datestr(Time_datetime_new(end),'HH:MM:SS')]))
+title(strcat(['F-region; ',datestr(Time_datetime_new(1),'yyyy-mm-dd')]))
 colorbar;
 set(gca,'YDir','normal');
 set(get(colorbar,'label'),'FontSize', 12,'string','(dB/Hz)')
+xtcks = xticks;
+[~,pos_xtcks] = intersect(T_Fregion,xtcks); %to find out which values correspond to the xtick locations
+set(gca, 'XTick',xticks, 'XTickLabel', xlabels(pos_xtcks)); %to put datetime ticks on the x-axis
+
+%% get magnitude and phase FFT
+% Sa = abs(S_Fregion);
+% phi = angle(S_Fregion);
+% PDS = 10*log10(P_Fregion);
+% 
+% [r, c] = find(Sa >= 70);
+% Fr = F_Fregion(r);
+% Tc = T_Fregion(c)';
+% FT = [Tc  Fr];
+% [C, ia, ic] = unique(FT(:,1));                                              % Find Unique Times
+% for k1 = 1:size(C,1)                                                        % Create Cell Array By Time
+%     FrqTime{k1} = FT(FT(:,1) == C(k1),:);                                   % Time & Frequency Cell
+% end
+% original_f = [697  770  852  941  1209  1336  1477];                        % DTMF Frequencies
+% dtmf_dcd = [1 5; 1 6; 1 7; 2 5; 2 6; 2 7; 3 5; 3 6; 3 7; 4 5; 4 6; 4 7];    % Combination Codes w.r.t. ‘original_f’
+% nbr_map = ['1' '2' '3' '4' '5' '6' '7' '8' '9' '*' '0' '#'];                % Number Key Map
+% for k1 = 1:size(C,1)
+%     freq_dist = abs(bsxfun(@minus, FrqTime{k1}(:,2), original_f));          % Distance Of ‘FrqTime’ Frequencies From ‘original_f’ Frequencies
+%     [~,freq_pos(:,k1)] = min(freq_dist,[],2);                               % Frequency Positions Of ‘FrqTime’ In ‘original_f’
+%     num_pad(k1) = nbr_map(ismember(dtmf_dcd, freq_pos(:,k1)', 'rows'));     % Map To Number Key Pad
+% end
+
+%%
+% figure()
+% h = imagesc(TT_Fregion,F_Fregion,A);%phi);%datenum(TT_Fregion_datetime),F_Fregion,10*log10(P_Fregion));
+% xlabel('Time')
+% ylabel('Phase')
+% title(strcat(['Phase F-region; ',datestr(Time_datetime_new(1),'yyyy-mm-dd')]))
+% colorbar;
+% set(gca,'YDir','normal');
+% set(get(colorbar,'label'),'FontSize', 12,'string','(dB/Hz)')
+% xtcks = xticks;
+% [~,pos_xtcks] = intersect(TT_Fregion,xtcks); %to find out which values correspond to the xtick locations
+% set(gca, 'XTick',xticks, 'XTickLabel', xlabels(pos_xtcks)); %to put datetime ticks on the x-axis
 
 %% spectrogram of interpolated values per individual altitude
-low_lim = 220;
-high_lim = 280;
-keep('E_region_lim','F_region_lim','te_interp','S1','F1','T1','P1','low_lim','high_lim','ne1','Time1','Time_datetime1','te1','alt1','m','delta_T','test_Te','test_Ne','N_1','N_Te','windowOverlap') %to make sure that all variables underneath are only calculated for the correct time period
-
-alt_lim = low_lim:5:high_lim;
-for i = 1:size(alt_lim,2)-1 %looking at different altitudes
-    alt_lim_mid(i) = (alt_lim(i)+alt_lim(i+1))/2;
-end
-
-T = round(seconds(median(delta_T))); %Time period over which EISCAT data is averaged
-Fs = 1/T;  
-f = linspace(0,Fs/2,500); %number of bins in y axis (number of frequency bins)
-for i = 2:length(alt_lim)-1
-    test_Te{i} = te_interp(alt_interp>alt_lim(i) & alt_interp<alt_lim(i+1));
-    if size(test_Te{i},1) > size(te_interp,2)/2 %Make sure that only the altitudes with a signal are used
-        N_Te(i) = length(test_Te{i});
-        if length(test_Te{i}) > 3600/T
-            N_1(i) = 60; %to have a window length of 60 data points (\approx 1 hour)
-        else %time period is shorter than 1 hour
-            N_1(i) = length(test_Te{i});
-        end
-        windowOverlap(i) = N_1(i) - 10;
-        [S,F,TT,P] = spectrogram(test_Te{i},hanning(N_1(i)),windowOverlap(i),f,Fs,'yaxis');              
-        S1{i} = S;
-        F1{i} = F;
-        T1{i} = TT;
-        P1{i} = P;
-
-        figure()
-        lab = 'Time (secs)';
-        if TT(end) > 60*60
-           TT = TT/(60*60);
-           lab = 'Time (hours)';
-        elseif TT(end) > 60
-           TT = TT/60;
-           lab = 'Time (mins)';
-        end
-        h = imagesc(TT,F,10*log10(P));%.*F);%,[-156.5 95.8] );
-        xlabel(lab)
-        ylabel('Frequency (Hz)')
-        title(strcat(['Alt ',num2str(alt_lim(i)),'-',num2str(alt_lim(i+1)),' km; Time ',datestr(Time_datetime_new(1),'HH:MM:SS'),'-',datestr(Time_datetime_new(end),'HH:MM:SS')]))
-        colorbar;
-        set(gca,'YDir','normal');
-        set(get(colorbar,'label'),'FontSize', 12,'string','(dB/Hz)')
-    else ;
-    end
-end
-
-%% Split into time periods (problem: would rather interpolate over a data gap of say < 5 minutes --> now not done)
-idx_NaN_end = find(diff(isnan(Time_new(1,:)))==1);
-idx_NaN_end1 = [idx_NaN_end length(Time_new)];
-idx_NaN_start = find(diff(isnan(Time_new(1,:)))==-1)+1;
-idx_NaN_start1 = [1 idx_NaN_start];
-
-
-for i = 1:length(idx_NaN_start1)
-    alt1{i} = alt_new(:,idx_NaN_start1(i):idx_NaN_end1(i));
-    ne1{i} = ne_new(:,idx_NaN_start1(i):idx_NaN_end1(i));
-    te1{i} = te_new(:,idx_NaN_start1(i):idx_NaN_end1(i));
-    Time1{i} = Time_new(:,idx_NaN_start1(i):idx_NaN_end1(i));
-    Time_datetime1{i} = Time_datetime_new(:,idx_NaN_start1(i):idx_NaN_end1(i));
-end
+% low_lim = 220;
+% high_lim = 280;
+% keep('E_region_lim','F_region_lim','te_interp','S1','F1','T1','P1','low_lim','high_lim','ne1','Time1','Time_datetime1','te1','alt1','m','delta_T','N_1','N_Te','windowOverlap') %to make sure that all variables underneath are only calculated for the correct time period
+% 
+% alt_lim = low_lim:5:high_lim;
+% for i = 1:size(alt_lim,2)-1 %looking at different altitudes
+%     alt_lim_mid(i) = (alt_lim(i)+alt_lim(i+1))/2;
+% end
+% 
+% T = round(seconds(median(delta_T))); %Time period over which EISCAT data is averaged
+% Fs = 1/T;  
+% f = linspace(0,Fs/2,500); %number of bins in y axis (number of frequency bins)
+% for i = 2:length(alt_lim)-1
+%     test_Te{i} = te_interp(alt_interp>alt_lim(i) & alt_interp<alt_lim(i+1));
+%     if size(test_Te{i},1) > size(te_interp,2)/2 %Make sure that only the altitudes with a signal are used
+%         N_Te(i) = length(test_Te{i});
+%         if length(test_Te{i}) > 3600/T
+%             N_1(i) = 60; %to have a window length of 60 data points (\approx 1 hour)
+%         else %time period is shorter than 1 hour
+%             N_1(i) = length(test_Te{i});
+%         end
+%         windowOverlap(i) = N_1(i) - 10;
+%         [S,F,TT,P] = spectrogram(test_Te{i},hanning(N_1(i)),windowOverlap(i),f,Fs,'yaxis');              
+%         S1{i} = S;
+%         F1{i} = F;
+%         T1{i} = TT;
+%         P1{i} = P;
+% 
+%         figure()
+%         lab = 'Time (secs)';
+%         if TT(end) > 60*60
+%            TT = TT/(60*60);
+%            lab = 'Time (hours)';
+%         elseif TT(end) > 60
+%            TT = TT/60;
+%            lab = 'Time (mins)';
+%         end
+%         h = imagesc(TT,F,10*log10(P));%.*F);%,[-156.5 95.8] );
+%         xlabel(lab)
+%         ylabel('Frequency (Hz)')
+%         title(strcat(['Alt ',num2str(alt_lim(i)),'-',num2str(alt_lim(i+1)),' km; Time ',datestr(Time_datetime_new(1),'HH:MM:SS'),'-',datestr(Time_datetime_new(end),'HH:MM:SS')]))
+%         colorbar;
+%         set(gca,'YDir','normal');
+%         set(get(colorbar,'label'),'FontSize', 12,'string','(dB/Hz)')
+%     else ;
+%     end
+% end
+% 
+% %% Split into time periods (problem: would rather interpolate over a data gap of say < 5 minutes --> now not done)
+% idx_NaN_end = find(diff(isnan(Time_new(1,:)))==1);
+% idx_NaN_end1 = [idx_NaN_end length(Time_new)];
+% idx_NaN_start = find(diff(isnan(Time_new(1,:)))==-1)+1;
+% idx_NaN_start1 = [1 idx_NaN_start];
+% 
+% 
+% for i = 1:length(idx_NaN_start1)
+%     alt1{i} = alt_new(:,idx_NaN_start1(i):idx_NaN_end1(i));
+%     ne1{i} = ne_new(:,idx_NaN_start1(i):idx_NaN_end1(i));
+%     te1{i} = te_new(:,idx_NaN_start1(i):idx_NaN_end1(i));
+%     Time1{i} = Time_new(:,idx_NaN_start1(i):idx_NaN_end1(i));
+%     Time_datetime1{i} = Time_datetime_new(:,idx_NaN_start1(i):idx_NaN_end1(i));
+% end
 %% spectrogram 
 % 
 % low_lim = 250;
