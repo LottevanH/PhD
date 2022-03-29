@@ -22,13 +22,15 @@ ne=par2D(:,:,3);
 ne(find(ne<0)) = NaN; %in case of negative electron densities (physically impossible..)
 te=par2D(:,:,4);%.*par2D(:,:,5); %according to the load_param_hdf5 script (line 42), the 4th column of par2D gives the Te parameter instead of Tr (Te/Ti) 
 ti=par2D(:,:,5);
+vi=par2D(:,:,6);
 Time_datetime = datetime(Time,'ConvertFrom','datenum'); 
 
 %% Plot complete time period
 n1 = Time(1,1); 
 n2 = Time(2,end); 
 xLimits=[n1 n2];
-yLimits=[min(alt,[],'all'); 300];
+yLimits=[min(alt,[],'all'); 400];
+% yLimits=[min(alt,[],'all'); 600];
 f1=figure();
 colormap jet;
 
@@ -59,7 +61,7 @@ xlabel(['Time [UT] ',num2str(y(1))],'FontSize', 8,'FontName','Arial') % Add labe
 
 subplot(3,1,3)
 pcolor(Time(1,:)',alt,ti),shading flat;
-caxis([0 3000]); % Limits to colorbar
+caxis([0 1500]); % Limits to colorbar
 colorbar; % Add colorbar to the right of the plot
 set(get(colorbar,'label'),'FontSize', 8,'string','Ion temperature (K)')
 xlim(xLimits);
@@ -469,3 +471,115 @@ set(gca, 'XTick',xticks, 'XTickLabel', xlabels(pos_xtcks)); %to put datetime tic
 %     end
 % end
 % 
+
+%% Plot complete time period for geomagnetic latitude 
+
+[lat,lon,glon,glat] = convert_hdf_to_lat(filename);
+
+n1 = Time(1,1); 
+n2 = Time(2,end); 
+% n1 = datenum(datetime(2017,12,18,02,00,00));
+% n2 = datenum(datetime(2017,12,18,07,00,00));
+xLimits=[n1 n2];
+% yLimits=[70 72]; %[min(glat,[],'all'), max(glat,[],'all')]; %[min(alt,[],'all'); 300];
+yLimits = [min(glat,[],'all'), max(glat,[],'all')];
+f1=figure();
+colormap jet;
+
+subplot(3,1,1);
+pcolor(Time(1,:)',glat,log10(ne)),shading flat;
+% imagesc(Time',alt,log10(ne)) %does not work, because needs a vector for Y instead of a matrix (not sure how to do this with a changing altitude) --> this function should make it easier to have empty parts for missing data.
+% surface(Time(1,:)',alt,log10(ne),'EdgeColor','none');%,shading flat; %different way to plot --> works
+
+caxis([10 11.4]); % give the limits of the colourbar
+colorbar; % Add colorbar to the right of the plot
+set(get(colorbar,'label'),'FontSize', 8,'string','Electron density (m^{-3})')
+xlim(xLimits); 
+ylim(yLimits);
+datetick('x',13,'keeplimits')
+ylabel('Geomagnetic Latitude','FontSize', 8,'FontName','Arial') %Add labels to axes and colorbar
+xlabel(['Time [UT] ',num2str(y(1)),'-',num2str(m(1)),'-',num2str(d(1))],'FontSize', 8,'FontName','Arial')
+
+% subplot(3,1,1);
+% pcolor(Time(1,:)',glat,vi),shading flat;
+% % imagesc(Time',alt,log10(ne)) %does not work, because needs a vector for Y instead of a matrix (not sure how to do this with a changing altitude) --> this function should make it easier to have empty parts for missing data.
+% % surface(Time(1,:)',alt,log10(ne),'EdgeColor','none');%,shading flat; %different way to plot --> works
+% 
+% caxis([0 500]); % give the limits of the colourbar
+% colorbar; % Add colorbar to the right of the plot
+% set(get(colorbar,'label'),'FontSize', 8,'string','Electron density (m^{-3})')
+% xlim(xLimits); 
+% ylim(yLimits);
+% datetick('x',13,'keeplimits')
+% ylabel('Geomagnetic Latitude','FontSize', 8,'FontName','Arial') %Add labels to axes and colorbar
+% xlabel(['Time [UT] ',num2str(y(1)),'-',num2str(m(1)),'-',num2str(d(1))],'FontSize', 8,'FontName','Arial')
+ 
+subplot(3,1,2)
+pcolor(Time(1,:)',glat,te),shading flat;
+caxis([0 3000]); % Limits to colorbar
+colorbar; % Add colorbar to the right of the plot
+set(get(colorbar,'label'),'FontSize', 8,'string','Electron temperature (K)') % Add labels to axes and colorbar
+xlim(xLimits); 
+ylim(yLimits); %ylim([min(alt,[],'all') 300])
+datetick('x',13,'keeplimits')
+ylabel('Geomagnetic Latitude','FontSize', 8,'FontName','Arial') % Add labels to axes and colorbar
+xlabel(['Time [UT] ',num2str(y(1))],'FontSize', 8,'FontName','Arial') % Add labels to axes and colorbar
+
+subplot(3,1,3)
+pcolor(Time(1,:)',glat,ti),shading flat;
+caxis([0 1500]); % Limits to colorbar
+colorbar; % Add colorbar to the right of the plot
+set(get(colorbar,'label'),'FontSize', 8,'string','Ion temperature (K)')
+xlim(xLimits);
+ylim(yLimits) ;
+datetick('x',13,'keeplimits')
+ylabel('Geomagnetic Latitude','FontSize', 8,'FontName','Arial') % Add labels to axes and colorbar
+xlabel(['Time [UT] ',num2str(y(1))],'FontSize', 8,'FontName','Arial')
+
+%% Plot complete time period for geographic latitude 
+
+n1 = Time(1,1); 
+n2 = Time(2,end); 
+% n1 = datenum(datetime(2017,12,18,02,00,00));
+% n2 = datenum(datetime(2017,12,18,07,00,00));
+xLimits=[n1 n2];
+% yLimits=[70 72]; %[min(glat,[],'all'), max(glat,[],'all')]; %[min(alt,[],'all'); 300];
+yLimits = [min(lat,[],'all'), max(lat,[],'all')];
+f1=figure();
+colormap jet;
+
+subplot(3,1,1);
+pcolor(Time(1,:)',lat,log10(ne)),shading flat;
+% imagesc(Time',alt,log10(ne)) %does not work, because needs a vector for Y instead of a matrix (not sure how to do this with a changing altitude) --> this function should make it easier to have empty parts for missing data.
+% surface(Time(1,:)',alt,log10(ne),'EdgeColor','none');%,shading flat; %different way to plot --> works
+
+caxis([10 11.4]); % give the limits of the colourbar
+colorbar; % Add colorbar to the right of the plot
+set(get(colorbar,'label'),'FontSize', 8,'string','Electron density (m^{-3})')
+xlim(xLimits); 
+ylim(yLimits);
+datetick('x',13,'keeplimits')
+ylabel('Geographic Latitude','FontSize', 8,'FontName','Arial') %Add labels to axes and colorbar
+xlabel(['Time [UT] ',num2str(y(1)),'-',num2str(m(1)),'-',num2str(d(1))],'FontSize', 8,'FontName','Arial')
+
+subplot(3,1,2)
+pcolor(Time(1,:)',lat,te),shading flat;
+caxis([0 3000]); % Limits to colorbar
+colorbar; % Add colorbar to the right of the plot
+set(get(colorbar,'label'),'FontSize', 8,'string','Electron temperature (K)') % Add labels to axes and colorbar
+xlim(xLimits); 
+ylim(yLimits); %ylim([min(alt,[],'all') 300])
+datetick('x',13,'keeplimits')
+ylabel('Geographic Latitude','FontSize', 8,'FontName','Arial') % Add labels to axes and colorbar
+xlabel(['Time [UT] ',num2str(y(1))],'FontSize', 8,'FontName','Arial') % Add labels to axes and colorbar
+
+subplot(3,1,3)
+pcolor(Time(1,:)',lat,ti),shading flat;
+caxis([0 1500]); % Limits to colorbar
+colorbar; % Add colorbar to the right of the plot
+set(get(colorbar,'label'),'FontSize', 8,'string','Ion temperature (K)')
+xlim(xLimits);
+ylim(yLimits) ;
+datetick('x',13,'keeplimits')
+ylabel('Geographic Latitude','FontSize', 8,'FontName','Arial') % Add labels to axes and colorbar
+xlabel(['Time [UT] ',num2str(y(1))],'FontSize', 8,'FontName','Arial')
