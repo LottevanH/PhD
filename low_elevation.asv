@@ -1,14 +1,21 @@
+%for low elevation scans, not possible to integrate in altitude (over E and
+%F region), because of the spatial differences. So need to evaluate
+%altitudes separately.
+%examples of low elevation modes: 
+% - ESR: gup3c, tau0, hilde, folke(?)
+% - VHF: bella
+
 clear all
-close all
+% close all
 
 addpath('C:\Github\PhD\functions');
 
+
 %% specify which filename to process
-% filename = 'C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\ULF_waves_events_currently_unexamined\2017_12_18\EISCAT_2017-12-18_bella_60@vhf.hdf5';
-% filename = 'C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\ULF_waves_events_currently_unexamined\2017_12_18\EISCAT_2017-12-18_folke_64@42mb.hdf5';
+filename = 'C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\ULF_waves_events_currently_unexamined\2017_12_18\EISCAT_2017-12-18_bella_60@vhf.hdf5';
+% filename = 'C:\data\1998-12-20_gup3c_20@32m\hdf5_folder\EISCAT_1998-12-20_gup3c_20@32m\EISCAT_1998-12-20_gup3c_20@32m.hdf5';
 % filename = 'C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\ULF_waves_events_currently_unexamined\1998_12_20\analysed_01_04\analysed_1998_12_20_01_till_04_60s_integration\hdf5_folder\EISCAT_1998-12-20_gup3c_60@32m\EISCAT_1998-12-20_gup3c_60@32m.hdf5';
-% filename = 'C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\Paper_Lisa_2017\EISCAT_2007-12-27_ipy_60@42m.hdf5';
-% filename = 'C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\Lester1999\EISCAT_1993-04-21_cp1k_120@uhf.hdf5';
+% filename = 'C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\ULF_waves_events_currently_unexamined\1998_12_20\analysed_01_04\analysed_1998_12_20_01_till_04_120s_integration\hdf5_folder\EISCAT_1998-12-20_gup3c_120@32m\EISCAT_1998-12-20_gup3c_120@32m.hdf5';
 
 %% extract variables and get metadeta info
 [Time,par2D,par1D,rpar2D,err2D,errs2d]=load_param_hdf5(filename);
@@ -38,9 +45,6 @@ colormap jet;
 
 subplot(3,1,1);
 pcolor(Time(1,:)',alt,log10(ne)),shading flat;
-% imagesc(Time',alt,log10(ne)) %does not work, because needs a vector for Y instead of a matrix (not sure how to do this with a changing altitude) --> this function should make it easier to have empty parts for missing data.
-% surface(Time(1,:)',alt,log10(ne),'EdgeColor','none');%,shading flat; %different way to plot --> works
-
 caxis([10 11.4]); % give the limits of the colourbar
 colorbar; % Add colorbar to the right of the plot
 set(get(colorbar,'label'),'FontSize', 8,'string','Electron density (m^{-3})')
@@ -74,14 +78,8 @@ xlabel(['Time [UT] ',num2str(y(1))],'FontSize', 8,'FontName','Arial')
  
 %% Time period of interest 
 %analyse from one hour before start interesting event
-% n11 = datenum(datetime(2007,12,27,14,00,00)); %in case of limited time
-% n22 = datenum(datetime(2007,12,27,18,30,00)); %in case of limited time
-% n11 = datenum(datetime(2017,12,18,01,00,00)); %in case of limited time
-% n22 = datenum(datetime(2017,12,18,08,00,00)); %in case of limited time
-% n11 = datenum(datetime(1998,12,20,01,00,00)); %in case of limited time
-% n22 = datenum(datetime(1998,12,20,04,00,00)); %in case of limited time
-n11 = datenum(datetime(1993,04,21,02,00,00)); %in case of limited time
-n22 = datenum(datetime(1993,04,21,05,00,00)); %in case of limited time
+n11 = datenum(datetime(2017,12,18,01,00,00)); %in case of limited time
+n22 = datenum(datetime(2017,12,18,08,00,00)); %in case of limited time
 % n11 = n1;
 % n22 = n2;
 
@@ -95,7 +93,8 @@ ti_poi = ti(:,idx_time_start:idx_time_end);
 Time_poi = Time(:,idx_time_start:idx_time_end);
 Time_datetime_poi = Time_datetime(:,idx_time_start:idx_time_end);
 
-%% Add NaNs in case of time gaps
+%% Add NaNs in case of time gaps without detrending
+
 for i = 1:size(Time_datetime_poi,2)-1
     delta_T(i) = Time_datetime_poi(1,i+1) - Time_datetime_poi(1,i);
 end
@@ -169,7 +168,7 @@ elseif length(idx_time_gap) > 1 %more than one time gap
             Time_datetime_new(:,idx_time_gap(i)+sum(number_of_NaN)-i:length(Time_datetime_poi)+sum(number_of_NaN)-2-i) = Time_datetime_poi(:,idx_time_gap(i)+2:end);
             ne_new(:,idx_time_gap(i)+sum(number_of_NaN)-i:length(Time_datetime_poi)+sum(number_of_NaN)-2-i) = ne_poi(:,idx_time_gap(i)+2:end);
             te_new(:,idx_time_gap(i)+sum(number_of_NaN)-i:length(Time_datetime_poi)+sum(number_of_NaN)-2-i) = te_poi(:,idx_time_gap(i)+2:end);
-            ti_new(:,idx_time_gap(i)+sum(number_of_NaN)-i:length(Time_datetime_poi)+sum(number_of_NaN)-2-i) = te_poi(:,idx_time_gap(i)+2:end);
+            ti_new(:,idx_time_gap(i)+sum(number_of_NaN)-i:length(Time_datetime_poi)+sum(number_of_NaN)-2-i) = ti_poi(:,idx_time_gap(i)+2:end);
             alt_new(:,idx_time_gap(i)+sum(number_of_NaN)-i:length(Time_datetime_poi)+sum(number_of_NaN)-2-i) = alt_poi(:,idx_time_gap(i)+2:end);
             Time_new(:,idx_time_gap(i)+sum(number_of_NaN)-i:length(Time_datetime_poi)+sum(number_of_NaN)-2-i) = Time_poi(:,idx_time_gap(i)+2:end);
         else
@@ -189,6 +188,119 @@ end
 addpath('C:\Github\PhD\functions\Inpaint_nans')
 % alt_new = inpaint_nans(alt_new); %interpolate over the NaN values so that these data points are taken into account as well later on
 
+%% Add NaNs in case of time gaps with detrending
+% detrnd = 2; %polynomial order used for detrending (1 = linear, 2 = quadratic etc)
+% for i = 1:size(Time_datetime_poi,2)-1
+%     delta_T(i) = Time_datetime_poi(1,i+1) - Time_datetime_poi(1,i);
+% end
+% idx_time_gap = find(delta_T > median(delta_T)+seconds(15)); %find time gaps if there are any
+% if length(idx_time_gap) == 1
+%     i = 1;
+%     te_poi1 = zeros(size(te_poi));
+%     for j = 1:size(te_poi,1)
+%         te_poi1(j,1:idx_time_gap(i)-1) = detrend(te_poi(j,1:idx_time_gap(i)-1),detrnd);
+%         te_poi1(j,idx_time_gap(i)+2:end) = detrend(te_poi(j,idx_time_gap(i)+2:end),detrnd);
+%     end
+%     number_of_NaN(i) = round((delta_T(idx_time_gap(i))+delta_T(idx_time_gap(i) + 1 ))/median(delta_T));
+%     Time_datetime_new(:,1:idx_time_gap(i)-1) = Time_datetime_poi(:,1:idx_time_gap(i)-1);
+%     Time_datetime_new(:,idx_time_gap(i):idx_time_gap(i)+number_of_NaN(i)-1) = NaT;
+%     Time_datetime_new(:,idx_time_gap(i)+number_of_NaN(i):length(Time_datetime_poi)+number_of_NaN-2) = Time_datetime_poi(:,idx_time_gap(i)+2:end);
+%     ne_new(:,1:idx_time_gap(i)-1) = ne_poi(:,1:idx_time_gap(i)-1);
+%     ne_new(:,idx_time_gap(i):idx_time_gap(i)+number_of_NaN(i)-1) = NaN;
+%     ne_new(:,idx_time_gap(i)+number_of_NaN(i):length(Time_datetime_poi)+number_of_NaN-2) = ne_poi(:,idx_time_gap(i)+2:end);
+%     te_new(:,1:idx_time_gap(i)-1) = te_poi1(:,1:idx_time_gap(i)-1);
+%     te_new(:,idx_time_gap(i):idx_time_gap(i)+number_of_NaN(i)-1) = NaN;
+%     te_new(:,idx_time_gap(i)+number_of_NaN(i):length(Time_datetime_poi)+number_of_NaN-2) = te_poi1(:,idx_time_gap(i)+2:end);    
+%     ti_new(:,1:idx_time_gap(i)-1) = ti_poi(:,1:idx_time_gap(i)-1);
+%     ti_new(:,idx_time_gap(i):idx_time_gap(i)+number_of_NaN(i)-1) = NaN;
+%     ti_new(:,idx_time_gap(i)+number_of_NaN(i):length(Time_datetime_poi)+number_of_NaN-2) = ti_poi(:,idx_time_gap(i)+2:end);
+%     Time_new(:,1:idx_time_gap(i)-1) = Time_poi(:,1:idx_time_gap(i)-1);
+%     Time_new(:,idx_time_gap(i):idx_time_gap(i)+number_of_NaN(i)-1) = NaN;
+%     Time_new(:,idx_time_gap(i)+number_of_NaN(i):length(Time_datetime_poi)+number_of_NaN-2) = Time_poi(:,idx_time_gap(i)+2:end);
+%     alt_new(:,1:idx_time_gap(i)-1) = alt_poi(:,1:idx_time_gap(i)-1);
+%     alt_new(:,idx_time_gap(i):idx_time_gap(i)+number_of_NaN(i)-1) = NaN;
+%     alt_new(:,idx_time_gap(i)+number_of_NaN(i):length(Time_datetime_poi)+number_of_NaN-2) = alt_poi(:,idx_time_gap(i)+2:end);
+% 
+% elseif length(idx_time_gap) > 1 %more than one time gap
+%     for i = 1:length(idx_time_gap)
+%         if i == 1
+%             te_poi1 = zeros(size(te_poi));
+%             for j = 1:size(te_poi,1)
+%                 te_poi1(j,1:idx_time_gap(i)-1) = detrend(te_poi(j,1:idx_time_gap(i)-1),detrnd);
+%                 te_poi1(j,idx_time_gap(i)+2:idx_time_gap(i+1)-1) = detrend(te_poi(j,idx_time_gap(i)+2:idx_time_gap(i+1)-1),detrnd);
+%             end
+%             number_of_NaN(i) = round((delta_T(idx_time_gap(i))+delta_T(idx_time_gap(i) + 1))/median(delta_T));
+%             Time_datetime_new(:,1:idx_time_gap(i)-1) = Time_datetime_poi(:,1:idx_time_gap(i)-1);
+%             Time_datetime_new(:,idx_time_gap(i):idx_time_gap(i)+number_of_NaN(i)-1) = NaT;
+%             ne_new(:,1:idx_time_gap(i)-1) = ne_poi(:,1:idx_time_gap(i)-1);
+%             ne_new(:,idx_time_gap(i):idx_time_gap(i)+number_of_NaN(i)-1) = NaN;
+%             te_new(:,1:idx_time_gap(i)-1) = te_poi1(:,1:idx_time_gap(i)-1);
+%             te_new(:,idx_time_gap(i):idx_time_gap(i)+number_of_NaN(i)-1) = NaN;
+%             ti_new(:,1:idx_time_gap(i)-1) = ti_poi(:,1:idx_time_gap(i)-1);
+%             ti_new(:,idx_time_gap(i):idx_time_gap(i)+number_of_NaN(i)-1) = NaN;
+%             Time_new(:,1:idx_time_gap(i)-1) = Time_poi(:,1:idx_time_gap(i)-1);
+%             Time_new(:,idx_time_gap(i):idx_time_gap(i)+number_of_NaN(i)-1) = NaN;
+%             alt_new(:,1:idx_time_gap(i)-1) = alt_poi(:,1:idx_time_gap(i)-1);
+%             alt_new(:,idx_time_gap(i):idx_time_gap(i)+number_of_NaN(i)-1) = NaN;
+%             Time_datetime_new(:,idx_time_gap(i)+number_of_NaN(i):idx_time_gap(i+1)-1+number_of_NaN(i)-2) = Time_datetime_poi(:,idx_time_gap(i)+2:idx_time_gap(i+1)-1);
+%             ne_new(:,idx_time_gap(i)+number_of_NaN(i):idx_time_gap(i+1)-1+number_of_NaN(i)-2) = ne_poi(:,idx_time_gap(i)+2:idx_time_gap(i+1)-1);
+%             te_new(:,idx_time_gap(i)+number_of_NaN(i):idx_time_gap(i+1)-1+number_of_NaN(i)-2) = te_poi1(:,idx_time_gap(i)+2:idx_time_gap(i+1)-1);
+%             alt_new(:,idx_time_gap(i)+number_of_NaN(i):idx_time_gap(i+1)-1+number_of_NaN(i)-2) = alt_poi(:,idx_time_gap(i)+2:idx_time_gap(i+1)-1);
+%             Time_new(:,idx_time_gap(i)+number_of_NaN(i):idx_time_gap(i+1)-1+number_of_NaN(i)-2) = Time_poi(:,idx_time_gap(i)+2:idx_time_gap(i+1)-1); 
+%             ti_new(:,idx_time_gap(i)+number_of_NaN(i):idx_time_gap(i+1)-1+number_of_NaN(i)-2) = ti_poi(:,idx_time_gap(i)+2:idx_time_gap(i+1)-1);
+%         elseif (i > 1) && (i < length(idx_time_gap))
+%             for j = 1:size(te_poi,1)
+%                 te_poi1(j,idx_time_gap(i)+2:idx_time_gap(i+1)-1) = detrend(te_poi(j,idx_time_gap(i)+2:idx_time_gap(i+1)-1),detrnd);
+%             end
+%             number_of_NaN(i) = round((delta_T(idx_time_gap(i))+delta_T(idx_time_gap(i) + 1 ))/median(delta_T));
+%             ne_new(:,idx_time_gap(i)+sum(number_of_NaN(1:i-1)-i):idx_time_gap(i)+sum(number_of_NaN(1:i))-i) = NaN;
+%             te_new(:,idx_time_gap(i)+sum(number_of_NaN(1:i-1)-i):idx_time_gap(i)+sum(number_of_NaN(1:i))-i) = NaN;
+%             Time_new(:,idx_time_gap(i)+sum(number_of_NaN(1:i-1)-i):idx_time_gap(i)+sum(number_of_NaN(1:i))-i) = NaN; 
+%             Time_datetime_new(:,idx_time_gap(i)+sum(number_of_NaN(1:i-1))-i:idx_time_gap(i)+sum(number_of_NaN(1:i))-i) = NaT; 
+%             alt_new(:,idx_time_gap(i)+sum(number_of_NaN(1:i-1)-i):idx_time_gap(i)+sum(number_of_NaN(1:i))-i) = NaN;
+%             ti_new(:,idx_time_gap(i)+sum(number_of_NaN(1:i-1)-i):idx_time_gap(i)+sum(number_of_NaN(1:i))-i) = NaN;
+%             Time_datetime_new(:,idx_time_gap(i)+sum(number_of_NaN(1:i))-i:idx_time_gap(i+1)-1+sum(number_of_NaN(1:i))-2-i) = Time_datetime_poi(:,idx_time_gap(i)+2:idx_time_gap(i+1)-1);
+%             Time_new(:,idx_time_gap(i)+sum(number_of_NaN(1:i))-i:idx_time_gap(i+1)-1+sum(number_of_NaN(1:i))-2-i) = Time_poi(:,idx_time_gap(i)+2:idx_time_gap(i+1)-1);
+%             ne_new(:,idx_time_gap(i)+sum(number_of_NaN(1:i))-i:idx_time_gap(i+1)-1+sum(number_of_NaN(1:i))-2-i) = ne_poi(:,idx_time_gap(i)+2:idx_time_gap(i+1)-1);
+%             te_new(:,idx_time_gap(i)+sum(number_of_NaN(1:i))-i:idx_time_gap(i+1)-1+sum(number_of_NaN(1:i))-2-i) = te_poi1(:,idx_time_gap(i)+2:idx_time_gap(i+1)-1);
+%             alt_new(:,idx_time_gap(i)+sum(number_of_NaN(1:i))-i:idx_time_gap(i+1)-1+sum(number_of_NaN(1:i))-2-i) = alt_poi(:,idx_time_gap(i)+2:idx_time_gap(i+1)-1);
+%             ti_new(:,idx_time_gap(i)+sum(number_of_NaN(1:i))-i:idx_time_gap(i+1)-1+sum(number_of_NaN(1:i))-2-i) = ti_poi(:,idx_time_gap(i)+2:idx_time_gap(i+1)-1);
+%         elseif i == length(idx_time_gap)
+%             for j = 1:size(te_poi,1)
+%                 te_poi1(j,idx_time_gap(i)+2:end) = detrend(te_poi(j,idx_time_gap(i)+2:end),detrnd);
+%             end
+%             number_of_NaN(i) = round((delta_T(idx_time_gap(i))+delta_T(idx_time_gap(i) + 1 ))/median(delta_T));
+%             Time_datetime_new(:,idx_time_gap(i)+sum(number_of_NaN(1:i-1)-i):idx_time_gap(i)+sum(number_of_NaN(:))-1-i) = NaT;
+%             ne_new(:,idx_time_gap(i)+sum(number_of_NaN(1:i-1)-i):idx_time_gap(i)+sum(number_of_NaN(:))-1-i) = NaN;
+%             te_new(:,idx_time_gap(i)+sum(number_of_NaN(1:i-1)-i):idx_time_gap(i)+sum(number_of_NaN(:))-1-i) = NaN;
+%             ti_new(:,idx_time_gap(i)+sum(number_of_NaN(1:i-1)-i):idx_time_gap(i)+sum(number_of_NaN(:))-1-i) = NaN;
+%             Time_new(:,idx_time_gap(i)+sum(number_of_NaN(1:i-1)-i):idx_time_gap(i)+sum(number_of_NaN(:))-1-i) = NaN; 
+%             alt_new(:,idx_time_gap(i)+sum(number_of_NaN(1:i-1)-i):idx_time_gap(i)+sum(number_of_NaN(:))-1-i) = NaN;
+%             Time_datetime_new(:,idx_time_gap(i)+sum(number_of_NaN)-i:length(Time_datetime_poi)+sum(number_of_NaN)-2-i) = Time_datetime_poi(:,idx_time_gap(i)+2:end);
+%             ne_new(:,idx_time_gap(i)+sum(number_of_NaN)-i:length(Time_datetime_poi)+sum(number_of_NaN)-2-i) = ne_poi(:,idx_time_gap(i)+2:end);
+%             te_new(:,idx_time_gap(i)+sum(number_of_NaN)-i:length(Time_datetime_poi)+sum(number_of_NaN)-2-i) = te_poi1(:,idx_time_gap(i)+2:end);
+%             ti_new(:,idx_time_gap(i)+sum(number_of_NaN)-i:length(Time_datetime_poi)+sum(number_of_NaN)-2-i) = ti_poi(:,idx_time_gap(i)+2:end);
+%             alt_new(:,idx_time_gap(i)+sum(number_of_NaN)-i:length(Time_datetime_poi)+sum(number_of_NaN)-2-i) = alt_poi(:,idx_time_gap(i)+2:end);
+%             Time_new(:,idx_time_gap(i)+sum(number_of_NaN)-i:length(Time_datetime_poi)+sum(number_of_NaN)-2-i) = Time_poi(:,idx_time_gap(i)+2:end);
+%         else
+%             disp('Something is wrong')
+%         end            
+%     end
+%     
+% else %so no time gaps
+%     for j = 1:size(te_poi,1)
+%         te_poi1(j,:) = detrend(te_poi(j,:),detrnd);
+%     end
+%     Time_datetime_new(:,:) = Time_datetime_poi(:,:);
+%     ne_new = ne_poi;
+%     te_new = te_poi1;
+%     alt_new = alt_poi;
+%     Time_new = Time_poi; 
+%     ti_new = ti_poi;   
+% end
+% 
+% addpath('C:\Github\PhD\functions\Inpaint_nans')
+% % alt_new = inpaint_nans(alt_new); %interpolate over the NaN values so that these data points are taken into account as well later on
 %% Plot with time gaps
 xLimits=[n11 n22];
 % yLimits=[min(alt,[],'all'); 300];
@@ -237,107 +349,160 @@ for i = 1:size(te_new,1)
     X = te_new(i,:);
     X(isnan(X)) = interp1(find(~isnan(X)), X(~isnan(X)), find(isnan(X)), 'linear'); %linear interpolation
     te_interp(i,:) = X;
-    Z = ne_new(i,:);
-    Z(isnan(Z)) = interp1(find(~isnan(Z)), Z(~isnan(Z)), find(isnan(Z)), 'linear'); %linear interpolation
-    ne_interp(i,:) = Z;
     Y = alt_new(i,:);
     Y(isnan(Y)) = interp1(find(~isnan(Y)), Y(~isnan(Y)), find(isnan(Y)), 'linear'); %linear interpolation
     alt_interp(i,:) = Y;
     clear X Y
 end
-% for i = 1:length(idx_NaNs)
-%     for j = 1:idx_NaNs(i)
-%         Time_new(1,idx_NaN_begin+j-1) = Time_new(1,idx_NaN_begin(i)-1)+(Time_new(1,idx_NaN_end(i)+1)-Time_new(1,idx_NaN_begin(i)-1))/idx_NaNs(i)*j;
-%         Time_new(2,idx_NaN_begin+j-1) = Time_new(2,idx_NaN_begin(i)-1)+(Time_new(2,idx_NaN_end(i)+1)-Time_new(2,idx_NaN_begin(i)-1))/idx_NaNs(i)*j;
-%     end
-% end
-
-% addpath('C:\Github\PhD\functions\Inpaint_nans')
-% % alt1 = inpaint_nans(alt_new); %interpolate over the NaN values so that these data points are taken into account as well later on
-% X = Time_new(1,:);
-% X(isnan(X)) = interp1(find(~isnan(X)), X(~isnan(X)), find(isnan(X)), 'linear'); 
 
 %% spectrogram of interpolated values for E and F region
-E_region_lim = 110; %upper limit E-region/lower limit F-region
-F_region_lim = 350; %upper limit F-region
 T = round(seconds(median(delta_T))); %Time period over which EISCAT data is averaged
 Fs = 1/T;  
 f = linspace(0,Fs/2,500); %number of bins in y axis (number of frequency bins)
 
-for i = 1:length(alt_interp)
-    te_av(1,i) = mean(te_interp(find(alt_interp(:,i) < E_region_lim),i));% Average over E region
-    te_av(2,i) = mean(te_interp(find(alt_interp(:,i) > E_region_lim & alt_interp(:,i) < F_region_lim),i));% Average over F region
-    ne_av(1,i) = mean(ne_interp(find(alt_interp(:,i) < E_region_lim),i));% Average over E region
-    ne_av(2,i) = mean(ne_interp(find(alt_interp(:,i) > E_region_lim & alt_interp(:,i) < F_region_lim),i));% Average over F region
+%find median altitudes of all the rows to determine what kind of altitude
+%spacing is needed
+median_alt_row = median(alt_interp,2);
+for i = 1:length(median_alt_row)-1
+alt_lim1(i+1) = (median_alt_row(i) + median_alt_row(i+1))/2;
 end
-te_av_detrnd(1,:) = detrend(te_av(1,:),2);
-te_av_detrnd(2,:) = detrend(te_av(2,:),2);
-ne_av_detrnd(1,:) = detrend(ne_av(1,:),2);
-ne_av_detrnd(2,:) = detrend(ne_av(2,:),2);
+alt_lim1(1) = median_alt_row(1)-(alt_lim1(2)-median_alt_row(1));
+alt_lim1(length(median_alt_row)+1) = 2*median_alt_row(end) - alt_lim1(length(median_alt_row));
 
-if length(te_av) > 3600/T%length(test_Te{i}) > 3600/T
-    N_1 = 60; %to have a window length of 60 data points (\approx 1 hour)
-else %time period is shorter than 1 hour
-    N_1 = length(te_av);
+low_lim = 100;
+high_lim = 150;
+% alt_lim = low_lim:5:high_lim;
+alt_lim = alt_lim1(find(alt_lim1 > low_lim & alt_lim1 < high_lim));
+median_alt_row1 = median_alt_row(find(alt_lim1 > low_lim & alt_lim1 < high_lim));
+
+for i = 1:size(alt_lim,2)-1 %looking at different altitudes
+    alt_lim_mid(i) = (alt_lim(i)+alt_lim(i+1))/2;
 end
-windowOverlap = N_1 - 10;
-[S_Eregion,F_Eregion,T_Eregion,P_Eregion] = spectrogram(te_av_detrnd(1,:),hanning(N_1),windowOverlap,f,Fs,'yaxis'); %Calculate for E-region              
-[S_Fregion,F_Fregion,T_Fregion,P_Fregion] = spectrogram(te_av_detrnd(2,:),hanning(N_1),windowOverlap,f,Fs,'yaxis'); %Calculate for F-region   
-[S_ne_Eregion,F_ne_Eregion,T_ne_Eregion,P_ne_Eregion] = spectrogram(ne_av_detrnd(1,:),hanning(N_1),windowOverlap,f,Fs,'yaxis'); %Calculate for E-region              
-[S_ne_Fregion,F_ne_Fregion,T_ne_Fregion,P_ne_Fregion] = spectrogram(ne_av_detrnd(2,:),hamming(N_1),windowOverlap,f,Fs,'yaxis'); %Calculate for F-region   
-%determine which unit of time is needed for the x-axis
-lab = 'Time (secs)';
-if T_Fregion(end) > 60*60
-   T_Fregion = T_Fregion/(60*60);
-   lab = 'Time (hours)';
-elseif T_Fregion(end) > 60
-   T_Fregion = T_Fregion/60;
-   lab = 'Time (mins)';
+
+% suitable_rows = find(median_alt_row > low_lim & median_alt_row < high_lim & diff_alt_row < 6);
+for i = 1:length(alt_lim)-1%length(suitable_rows)%length(alt_lim)-1
+    %PROBLEM:  te_alt only copies the columns for which it finds a value in
+    %the right altitude range and then put all the columns closer together.
+    %So there should maybe be NaN values at certain locations and values
+    %might not be at their correct time.
+    %UPDATE: implemented solution only works if the radar does not move
+    %during the time frame of interest.
+    %UPDATE2: now need to interpolate over 
+%     te_alt{i} = te_interp(suitable_rows(i),:);% te_interp(alt_interp>alt_lim(i) & alt_interp<alt_lim(i+1));
+    te_alt1 = NaN(1,length(te_interp));%NaN(size(te_interp));
+    [row_idx,col_idx] = find(alt_interp>alt_lim(i) & alt_interp<alt_lim(i+1));
+    if length(row_idx) > length(te_interp(i,:))/2%length(te_alt{i}) > length(te_interp)/2 %Make sure that only the altitudes with a signal are used
+        for k = 1:length(row_idx)
+            te_alt1(1,col_idx(k)) = te_interp(row_idx(k),col_idx(k));
+        end
+%         %need interpolation over potential NaN values
+        idx_NaN_begin10 = find(diff(isnan(te_alt1(1,:)))==1)+1;
+        idx_NaN_end20 = find(diff(isnan(te_alt1(1,:)))==-1);
+        idx_NaNs = idx_NaN_end20 - idx_NaN_begin10 + 1;
+        Z = te_alt1;
+        Z(isnan(Z)) = interp1(find(~isnan(Z)), Z(~isnan(Z)), find(isnan(Z)), 'linear'); %linear interpolation
+        te_alt2 = 
+        clear X Y
+        %%%%%%
+%         te_alt2 = 
+        te_alt{i} = te_alt1; 
+            N_Te(i) = length(te_alt{i});
+            te_alt_detrend{i} = detrend(te_alt{i},4);
+        if length(te_alt{i}) > 3600/T%length(test_Te{i}) > 3600/T
+            N_1 = round(3600/T);%60; %to have a window length of 60 data points (\approx 1 hour)
+        else %time period is shorter than 1 hour
+            N_1 = length(te_alt{i});
+        end
+%         windowOverlap = N_1 - 10;
+%         windowOverlap1 = N_1 - 5;
+%         windowOverlap2 = N_1 - 10;
+%         windowOverlap3 = N_1 - 15;
+%         windowOverlap4 = N_1 - 20;
+%         windowOverlap = [windowOverlap1 windowOverlap2 windowOverlap3 windowOverlap4];
+        N_2 = N_1;%[30 40 50 60 70 80 90];
+        for j = 1:length(N_2)
+            windowOverlap(j) = N_2(j) - round(600/T);%overlap of 10 minutes; 10;
+%         [S_Eregion{i},F_Eregion{i},T_Eregion{i},P_Eregion{i}] = spectrogram(te_alt{i},hanning(N_1),windowOverlap,f,Fs,'yaxis'); %Calculate for E-region              
+        [S_Fregion{i,j},F_Fregion{i,j},T_Fregion{i,j},P_Fregion{i,j}] = spectrogram(te_alt_detrend{i},hamming(N_2(j)),windowOverlap(j),f,Fs,'yaxis'); %Calculate for F-region   
+        TT_Fregion = T_Fregion{i,j};
+        powerspectrum = 10*log10(P_Fregion{i,j});
+        for k = 1:size(powerspectrum,2)
+        [pks{i,j,k},locs{i,j,k}] = findpeaks(powerspectrum(:,k), F_Fregion{i,j},'MinPeakHeight',60,'MinPeakProminence',4);
+        end
+        %determine which unit of time is needed for the x-axis
+        lab = 'Time (secs)';
+        if TT_Fregion(end) > 60*60
+           T_Fregion{i,j} = T_Fregion{i,j}/(60*60);
+           lab = 'Time (hours)';
+        elseif TT_Fregion(end) > 60
+           T_Fregion{i,j} = T_Fregion{i,j}/60;
+           lab = 'Time (mins)';
+        end
+        TT_Fregion_datetime{i,j} = Time_datetime_new(1,1) + hours(T_Fregion{i,j});
+        formatOut = 'HH:mm:ss';
+        Time1 = datenum(TT_Fregion_datetime{i,j});
+%         xlabels = cellstr(TT_Fregion_datetime,formatOut);
+
+        % figure()
+        % h = imagesc(TT_Eregion,F_Eregion,10*log10(P_Eregion));%.*F);%,[-156.5 95.8] );
+        % xlabel('Time')
+        % ylabel('Frequency (Hz)')
+        % title(strcat(['E-region; ',datestr(Time_datetime_new(1),'yyyy-mm-dd')]))
+        % colorbar;
+        % set(gca,'YDir','normal');
+        % set(get(colorbar,'label'),'FontSize', 12,'string','(dB/Hz)')
+        % xtcks = xticks;
+        % [~,pos_xtcks] = intersect(TT_Fregion,xtcks); %to find out which values correspond to the xtick locations
+        % set(gca, 'XTick',xticks, 'XTickLabel', xlabels(pos_xtcks)); %to put datetime ticks on the x-axis
+
+        figure()
+        h = imagesc(datenum(TT_Fregion_datetime{i,j}),F_Fregion{i,j}*1000,10*log10(P_Fregion{i,j}));%datenum(TT_Fregion_datetime),F_Fregion,10*log10(P_Fregion));
+        xlabel('Time')
+        ylabel('Frequency (mHz)')
+        ylim([0 1000/120])
+%         title(strcat(['Altitude: ',num2str(alt_lim(i)),'-',num2str(alt_lim(i+1)),'; ',datestr(Time_datetime_new(1),'yyyy-mm-dd')]))
+        title(strcat(['Altitude: ',num2str(alt_lim_mid(i)),'km ; ',datestr(Time_datetime_new(1),'yyyy-mm-dd')]))
+        colorbar;
+        colormap parula
+        caxis([0 90])
+        set(gca,'YDir','normal');
+        set(get(colorbar,'label'),'FontSize', 12,'string','(dB/Hz)')
+        datetick('x',13,'keeplimits')
+        hold on 
+        for k = 1:size(powerspectrum,2)   
+            if isempty(locs{i,j,k}) == 0
+                plot(Time1(k),locs{i,j,k}*1000,'.r')
+            else ;
+            end
+        end
+        clear powerspectrum 
+        end
+    else ;
+    end
+%     clear row_idx col_idx te_alt1
 end
-TT_Fregion_datetime = Time_datetime_new(1,1) + hours(T_Fregion);
-formatOut = 'HH:mm:ss';
-% xlabels = cellstr(TT_Fregion_datetime,formatOut);
-
-% figure()
-% h = imagesc(TT_Eregion,F_Eregion,10*log10(P_Eregion));%.*F);%,[-156.5 95.8] );
-% xlabel('Time')
-% ylabel('Frequency (Hz)')
-% title(strcat(['E-region; ',datestr(Time_datetime_new(1),'yyyy-mm-dd')]))
-% colorbar;
-% set(gca,'YDir','normal');
-% set(get(colorbar,'label'),'FontSize', 12,'string','(dB/Hz)')
-% xtcks = xticks;
-% [~,pos_xtcks] = intersect(TT_Fregion,xtcks); %to find out which values correspond to the xtick locations
-% set(gca, 'XTick',xticks, 'XTickLabel', xlabels(pos_xtcks)); %to put datetime ticks on the x-axis
-
+%% plot the peaks for all altitudes
+color_alt = jet(length(alt_lim));
+legend_str = strcat(num2str(round(median_alt_row1(:))),'km');
 figure()
-h = imagesc(datenum(TT_Fregion_datetime),F_Fregion,10*log10(P_Fregion));%datenum(TT_Fregion_datetime),F_Fregion,10*log10(P_Fregion));
-xlabel('Time')
-ylabel('Frequency (Hz)')
-title(strcat(['F-region; ',datestr(Time_datetime_new(1),'yyyy-mm-dd')]))
-colorbar;
-set(gca,'YDir','normal');
-set(get(colorbar,'label'),'FontSize', 12,'string','(dB/Hz)')
-% caxis([0 90])
+hold on
+ylim([0 1000/120])
+xlim([datenum(datetime(n11,'ConvertFrom','datenum')+hours(0.75)) datenum(datetime(n22,'ConvertFrom','datenum')-hours(0.75))])
 datetick('x',13,'keeplimits')
-% xtcks = xticks;
-% [~,pos_xtcks] = intersect(T_Fregion,xtcks); %to find out which values correspond to the xtick locations
-% set(gca, 'XTick',xticks, 'XTickLabel', xlabels(pos_xtcks)); %to put datetime ticks on the x-axis
+for i = 1:length(legend_str)
+    plot(n11,0,'*','color',color_alt(i,:))
+end
+legend(legend_str)
+for i = 1:length(median_alt_row1)%%THIS IS WRONG --> wrong median_alt_row1
+    for k = 1:size(P_Fregion{i,j},2)
+        if isempty(locs{i,j,k}) == 0
+            plot(Time1(k),locs{i,j,k}*1000,'*','color',color_alt(i,:),'HandleVisibility','off')
+        else ;
+        end
+    end
+end
 
-% figure()
-% h = imagesc(T_Fregion,F_ne_Fregion,10*log10(P_ne_Fregion));%datenum(TT_Fregion_datetime),F_Fregion,10*log10(P_Fregion));
-% xlabel('Time')
-% ylabel('Frequency (Hz)')
-% title(strcat(['Ne; F-region; ',datestr(Time_datetime_new(1),'yyyy-mm-dd')]))
-% colorbar;
-% set(gca,'YDir','normal');
-% set(get(colorbar,'label'),'FontSize', 12,'string','(dB/Hz)')
-% % caxis([20 80])
-% xtcks = xticks;
-% [~,pos_xtcks] = intersect(T_Fregion,xtcks); %to find out which values correspond to the xtick locations
-% set(gca, 'XTick',xticks, 'XTickLabel', xlabels(pos_xtcks)); %to put datetime ticks on the x-axis
-
-
+%% try to find at least 
 %% get magnitude and phase FFT
 % Sa = abs(S_Fregion);
 % phi = angle(S_Fregion);
@@ -509,38 +674,24 @@ datetick('x',13,'keeplimits')
 
 %% Plot complete time period for geomagnetic latitude 
 
-[lat,lon,glon,glat] = convert_hdf_to_lat(filename);
-
-n1 = Time(1,1); 
-n2 = Time(2,end); 
-% n1 = datenum(datetime(2017,12,18,02,00,00));
-% n2 = datenum(datetime(2017,12,18,07,00,00));
-xLimits=[n1 n2];
-% yLimits=[70 72]; %[min(glat,[],'all'), max(glat,[],'all')]; %[min(alt,[],'all'); 300];
-yLimits = [min(glat,[],'all'), max(glat,[],'all')];
-f1=figure();
-colormap jet;
-
-subplot(3,1,1);
-pcolor(Time(1,:)',glat,log10(ne)),shading flat;
-% imagesc(Time',alt,log10(ne)) %does not work, because needs a vector for Y instead of a matrix (not sure how to do this with a changing altitude) --> this function should make it easier to have empty parts for missing data.
-% surface(Time(1,:)',alt,log10(ne),'EdgeColor','none');%,shading flat; %different way to plot --> works
-
-caxis([10 11.4]); % give the limits of the colourbar
-colorbar; % Add colorbar to the right of the plot
-set(get(colorbar,'label'),'FontSize', 8,'string','Electron density (m^{-3})')
-xlim(xLimits); 
-ylim(yLimits);
-datetick('x',13,'keeplimits')
-ylabel('Geomagnetic Latitude','FontSize', 8,'FontName','Arial') %Add labels to axes and colorbar
-xlabel(['Time [UT] ',num2str(y(1)),'-',num2str(m(1)),'-',num2str(d(1))],'FontSize', 8,'FontName','Arial')
-
+% [lat,lon,glon,glat] = convert_hdf_to_lat(filename);
+% 
+% n1 = Time(1,1); 
+% n2 = Time(2,end); 
+% % n1 = datenum(datetime(2017,12,18,02,00,00));
+% % n2 = datenum(datetime(2017,12,18,07,00,00));
+% xLimits=[n1 n2];
+% % yLimits=[70 72]; %[min(glat,[],'all'), max(glat,[],'all')]; %[min(alt,[],'all'); 300];
+% yLimits = [min(glat,[],'all'), max(glat,[],'all')];
+% f1=figure();
+% colormap jet;
+% 
 % subplot(3,1,1);
-% pcolor(Time(1,:)',glat,vi),shading flat;
+% pcolor(Time(1,:)',glat,log10(ne)),shading flat;
 % % imagesc(Time',alt,log10(ne)) %does not work, because needs a vector for Y instead of a matrix (not sure how to do this with a changing altitude) --> this function should make it easier to have empty parts for missing data.
 % % surface(Time(1,:)',alt,log10(ne),'EdgeColor','none');%,shading flat; %different way to plot --> works
 % 
-% caxis([0 500]); % give the limits of the colourbar
+% caxis([10 11.4]); % give the limits of the colourbar
 % colorbar; % Add colorbar to the right of the plot
 % set(get(colorbar,'label'),'FontSize', 8,'string','Electron density (m^{-3})')
 % xlim(xLimits); 
@@ -548,74 +699,88 @@ xlabel(['Time [UT] ',num2str(y(1)),'-',num2str(m(1)),'-',num2str(d(1))],'FontSiz
 % datetick('x',13,'keeplimits')
 % ylabel('Geomagnetic Latitude','FontSize', 8,'FontName','Arial') %Add labels to axes and colorbar
 % xlabel(['Time [UT] ',num2str(y(1)),'-',num2str(m(1)),'-',num2str(d(1))],'FontSize', 8,'FontName','Arial')
- 
-subplot(3,1,2)
-pcolor(Time(1,:)',glat,te),shading flat;
-caxis([0 3000]); % Limits to colorbar
-colorbar; % Add colorbar to the right of the plot
-set(get(colorbar,'label'),'FontSize', 8,'string','Electron temperature (K)') % Add labels to axes and colorbar
-xlim(xLimits); 
-ylim(yLimits); %ylim([min(alt,[],'all') 300])
-datetick('x',13,'keeplimits')
-ylabel('Geomagnetic Latitude','FontSize', 8,'FontName','Arial') % Add labels to axes and colorbar
-xlabel(['Time [UT] ',num2str(y(1))],'FontSize', 8,'FontName','Arial') % Add labels to axes and colorbar
-
-subplot(3,1,3)
-pcolor(Time(1,:)',glat,ti),shading flat;
-caxis([0 1500]); % Limits to colorbar
-colorbar; % Add colorbar to the right of the plot
-set(get(colorbar,'label'),'FontSize', 8,'string','Ion temperature (K)')
-xlim(xLimits);
-ylim(yLimits) ;
-datetick('x',13,'keeplimits')
-ylabel('Geomagnetic Latitude','FontSize', 8,'FontName','Arial') % Add labels to axes and colorbar
-xlabel(['Time [UT] ',num2str(y(1))],'FontSize', 8,'FontName','Arial')
+% 
+% % subplot(3,1,1);
+% % pcolor(Time(1,:)',glat,vi),shading flat;
+% % % imagesc(Time',alt,log10(ne)) %does not work, because needs a vector for Y instead of a matrix (not sure how to do this with a changing altitude) --> this function should make it easier to have empty parts for missing data.
+% % % surface(Time(1,:)',alt,log10(ne),'EdgeColor','none');%,shading flat; %different way to plot --> works
+% % 
+% % caxis([0 500]); % give the limits of the colourbar
+% % colorbar; % Add colorbar to the right of the plot
+% % set(get(colorbar,'label'),'FontSize', 8,'string','Electron density (m^{-3})')
+% % xlim(xLimits); 
+% % ylim(yLimits);
+% % datetick('x',13,'keeplimits')
+% % ylabel('Geomagnetic Latitude','FontSize', 8,'FontName','Arial') %Add labels to axes and colorbar
+% % xlabel(['Time [UT] ',num2str(y(1)),'-',num2str(m(1)),'-',num2str(d(1))],'FontSize', 8,'FontName','Arial')
+%  
+% subplot(3,1,2)
+% pcolor(Time(1,:)',glat,te),shading flat;
+% caxis([0 3000]); % Limits to colorbar
+% colorbar; % Add colorbar to the right of the plot
+% set(get(colorbar,'label'),'FontSize', 8,'string','Electron temperature (K)') % Add labels to axes and colorbar
+% xlim(xLimits); 
+% ylim(yLimits); %ylim([min(alt,[],'all') 300])
+% datetick('x',13,'keeplimits')
+% ylabel('Geomagnetic Latitude','FontSize', 8,'FontName','Arial') % Add labels to axes and colorbar
+% xlabel(['Time [UT] ',num2str(y(1))],'FontSize', 8,'FontName','Arial') % Add labels to axes and colorbar
+% 
+% subplot(3,1,3)
+% pcolor(Time(1,:)',glat,ti),shading flat;
+% caxis([0 1500]); % Limits to colorbar
+% colorbar; % Add colorbar to the right of the plot
+% set(get(colorbar,'label'),'FontSize', 8,'string','Ion temperature (K)')
+% xlim(xLimits);
+% ylim(yLimits) ;
+% datetick('x',13,'keeplimits')
+% ylabel('Geomagnetic Latitude','FontSize', 8,'FontName','Arial') % Add labels to axes and colorbar
+% xlabel(['Time [UT] ',num2str(y(1))],'FontSize', 8,'FontName','Arial')
 
 %% Plot complete time period for geographic latitude 
 
-n1 = Time(1,1); 
-n2 = Time(2,end); 
-% n1 = datenum(datetime(2017,12,18,02,00,00));
-% n2 = datenum(datetime(2017,12,18,07,00,00));
-xLimits=[n11 n22];
-% yLimits=[70 72]; %[min(glat,[],'all'), max(glat,[],'all')]; %[min(alt,[],'all'); 300];
+% n1 = Time(1,1); 
+% n2 = Time(2,end); 
+% % n1 = datenum(datetime(2017,12,18,02,00,00));
+% % n2 = datenum(datetime(2017,12,18,07,00,00));
+% xLimits=[n11 n22];
+% % yLimits=[70 72]; %[min(glat,[],'all'), max(glat,[],'all')]; %[min(alt,[],'all'); 300];
 % yLimits = [min(lat,[],'all'), max(lat,[],'all')];
-yLimits = [77.75 78.05];
-f1=figure();
-colormap jet;
-
-subplot(3,1,1);
-pcolor(Time(1,:)',lat,log10(ne)),shading flat;
-% imagesc(Time',alt,log10(ne)) %does not work, because needs a vector for Y instead of a matrix (not sure how to do this with a changing altitude) --> this function should make it easier to have empty parts for missing data.
-% surface(Time(1,:)',alt,log10(ne),'EdgeColor','none');%,shading flat; %different way to plot --> works
-
-caxis([10 11.4]); % give the limits of the colourbar
-colorbar; % Add colorbar to the right of the plot
-set(get(colorbar,'label'),'FontSize', 8,'string','Electron density (m^{-3})')
-xlim(xLimits); 
-ylim(yLimits);
-datetick('x',13,'keeplimits')
-ylabel('Geographic Latitude','FontSize', 8,'FontName','Arial') %Add labels to axes and colorbar
-xlabel(['Time [UT] ',num2str(y(1)),'-',num2str(m(1)),'-',num2str(d(1))],'FontSize', 8,'FontName','Arial')
-
-subplot(3,1,2)
-pcolor(Time(1,:)',lat,te),shading flat;
-caxis([0 3000]); % Limits to colorbar
-colorbar; % Add colorbar to the right of the plot
-set(get(colorbar,'label'),'FontSize', 8,'string','Electron temperature (K)') % Add labels to axes and colorbar
-xlim(xLimits); 
-ylim(yLimits); %ylim([min(alt,[],'all') 300])
-datetick('x',13,'keeplimits')
-ylabel('Geographic Latitude','FontSize', 8,'FontName','Arial') % Add labels to axes and colorbar
-xlabel(['Time [UT] ',num2str(y(1))],'FontSize', 8,'FontName','Arial') % Add labels to axes and colorbar
-
-subplot(3,1,3)
-pcolor(Time(1,:)',lat,ti),shading flat;
-caxis([0 1500]); % Limits to colorbar
-colorbar; % Add colorbar to the right of the plot
-set(get(colorbar,'label'),'FontSize', 8,'string','Ion temperature (K)')
-xlim(xLimits);
-ylim(yLimits) ;
-datetick('x',13,'keeplimits')
-ylabel('Geographic Latitude','FontSize', 8,'FontName','Arial') % Add labels to axes and colorbar
-xlabel(['Time [UT] ',num2str(y(1))],'FontSize', 8,'FontName','Arial')
+% yLimits = [71 75];
+% f1=figure();
+% colormap jet;
+% 
+% subplot(3,1,1);
+% pcolor(Time(1,:)',lat,log10(ne)),shading flat;
+% % imagesc(Time',alt,log10(ne)) %does not work, because needs a vector for Y instead of a matrix (not sure how to do this with a changing altitude) --> this function should make it easier to have empty parts for missing data.
+% % surface(Time(1,:)',alt,log10(ne),'EdgeColor','none');%,shading flat; %different way to plot --> works
+% 
+% caxis([10 11.4]); % give the limits of the colourbar
+% colorbar; % Add colorbar to the right of the plot
+% set(get(colorbar,'label'),'FontSize', 8,'string','Electron density (m^{-3})')
+% xlim(xLimits); 
+% ylim(yLimits);
+% datetick('x',13,'keeplimits')
+% ylabel('Geographic Latitude','FontSize', 8,'FontName','Arial') %Add labels to axes and colorbar
+% xlabel(['Time [UT] ',num2str(y(1)),'-',num2str(m(1)),'-',num2str(d(1))],'FontSize', 8,'FontName','Arial')
+% 
+% subplot(3,1,2)
+% pcolor(Time(1,:)',lat,te),shading flat;
+% caxis([0 3000]); % Limits to colorbar
+% colorbar; % Add colorbar to the right of the plot
+% set(get(colorbar,'label'),'FontSize', 8,'string','Electron temperature (K)') % Add labels to axes and colorbar
+% xlim(xLimits); 
+% ylim(yLimits); %ylim([min(alt,[],'all') 300])
+% datetick('x',13,'keeplimits')
+% ylabel('Geographic Latitude','FontSize', 8,'FontName','Arial') % Add labels to axes and colorbar
+% xlabel(['Time [UT] ',num2str(y(1))],'FontSize', 8,'FontName','Arial') % Add labels to axes and colorbar
+% 
+% subplot(3,1,3)
+% pcolor(Time(1,:)',lat,ti),shading flat;
+% caxis([0 1500]); % Limits to colorbar
+% colorbar; % Add colorbar to the right of the plot
+% set(get(colorbar,'label'),'FontSize', 8,'string','Ion temperature (K)')
+% xlim(xLimits);
+% ylim(yLimits) ;
+% datetick('x',13,'keeplimits')
+% ylabel('Geographic Latitude','FontSize', 8,'FontName','Arial') % Add labels to axes and colorbar
+% xlabel(['Time [UT] ',num2str(y(1))],'FontSize', 8,'FontName','Arial')
