@@ -6,7 +6,7 @@
 % - VHF: bella
 
 clear all
-% close all
+close all
 
 addpath('C:\Github\PhD\functions');
 
@@ -359,7 +359,7 @@ end
 T = round(seconds(median(delta_T))); %Time period over which EISCAT data is averaged
 Fs = 1/T;  
 f = linspace(0,Fs/2,500); %number of bins in y axis (number of frequency bins)
-
+detrnd = 2; %order of detrending (quadratical for 
 %find median altitudes of all the rows to determine what kind of altitude
 %spacing is needed
 median_alt_row = median(alt_interp,2);
@@ -369,11 +369,11 @@ end
 alt_lim1(1) = median_alt_row(1)-(alt_lim1(2)-median_alt_row(1));
 alt_lim1(length(median_alt_row)+1) = 2*median_alt_row(end) - alt_lim1(length(median_alt_row));
 
-low_lim = 100;
-high_lim = 150;
+low_lim = 200;
+high_lim = 350;
 % alt_lim = low_lim:5:high_lim;
 alt_lim = alt_lim1(find(alt_lim1 > low_lim & alt_lim1 < high_lim));
-median_alt_row1 = median_alt_row(find(alt_lim1 > low_lim & alt_lim1 < high_lim));
+median_alt_row1 = median_alt_row(find(median_alt_row > alt_lim(1) & median_alt_row < alt_lim(end)));
 
 for i = 1:size(alt_lim,2)-1 %looking at different altitudes
     alt_lim_mid(i) = (alt_lim(i)+alt_lim(i+1))/2;
@@ -407,7 +407,7 @@ for i = 1:length(alt_lim)-1%length(suitable_rows)%length(alt_lim)-1
 %         te_alt2 = 
         te_alt{i} = te_alt2; 
             N_Te(i) = length(te_alt{i});
-            te_alt_detrend{i} = detrend(te_alt{i},4);
+            te_alt_detrend{i} = detrend(te_alt{i},detrnd);
         if length(te_alt{i}) > 3600/T%length(test_Te{i}) > 3600/T
             N_1 = round(3600/T);%60; %to have a window length of 60 data points (\approx 1 hour)
         else %time period is shorter than 1 hour
@@ -493,7 +493,7 @@ for i = 1:length(legend_str)
     plot(n11,0,'*','color',color_alt(i,:))
 end
 legend(legend_str)
-for i = 1:length(median_alt_row1)%%THIS IS WRONG --> wrong median_alt_row1
+for i = 1:length(median_alt_row1)
     for k = 1:size(P_Fregion{i,j},2)
         if isempty(locs{i,j,k}) == 0
             plot(Time1(k),locs{i,j,k}*1000,'*','color',color_alt(i,:),'HandleVisibility','off')
