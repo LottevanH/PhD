@@ -185,8 +185,8 @@ else %so no time gaps
     ti_new = ti_poi;   
 end
 
-addpath('C:\Github\PhD\functions\Inpaint_nans')
-% alt_new = inpaint_nans(alt_new); %interpolate over the NaN values so that these data points are taken into account as well later on
+% addpath('C:\Github\PhD\functions\Inpaint_nans')
+% % alt_new = inpaint_nans(alt_new); %interpolate over the NaN values so that these data points are taken into account as well later on
 
 %% Add NaNs in case of time gaps with detrending
 % detrnd = 2; %polynomial order used for detrending (1 = linear, 2 = quadratic etc)
