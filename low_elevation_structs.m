@@ -80,10 +80,10 @@ xlabel(['Time [UT] ',num2str(y(1))],'FontSize', 8,'FontName','Arial')
  
 %% Time period of interest 
 %analyse from one hour before start interesting event
-n11 = datenum(datetime(2017,12,18,01,00,00)); %in case of limited time
-n22 = datenum(datetime(2017,12,18,08,00,00)); %in case of limited time
-% n11 = n1;
-% n22 = n2;
+% n11 = datenum(datetime(2017,12,18,01,00,00)); %in case of limited time
+% n22 = datenum(datetime(2017,12,18,08,00,00)); %in case of limited time
+n11 = n1;
+n22 = n2;
 
 idx_time_start = find(Time(1,:) > n11,1);
 idx_time_end = find(Time(1,:) < n22,1,'last');
@@ -270,7 +270,7 @@ for j = 1:length(variables)
 end
 
 %% Input signal to FFT
-parameters_of_interest = [3,5];%3; %setdiff(2:length(variables),6:7);
+parameters_of_interest = [3,4,5];%3; %setdiff(2:length(variables),6:7);
 low_lim = 200;
 high_lim = 320;
 row_interest = find(median_alt_row > low_lim & median_alt_row < high_lim);
@@ -295,10 +295,10 @@ for i = 1%:length(median_alt_row1)
         datetick('x',13,'keeplimits')
         xlim([n11 n22])
         hold on
-        plot(input_locs{i,j},input_pks{i,j},'*r')
-        plot(input_locs1{i,j},-input_pks1{i,j},'*b')
+%         plot(input_locs{i,j},input_pks{i,j},'*r')
+%         plot(input_locs1{i,j},-input_pks1{i,j},'*b')
         plot(input_locs_tot{i,j},input_pks_tot{i,j},'*g')
-        plot(input_locs_tot{i,j}(1:end-1),abs(amplitude{i,j}),'k')
+%         plot(input_locs_tot{i,j}(1:end-1),abs(amplitude{i,j}),'k')
         clear pks_time min_time
     end
 end
@@ -322,17 +322,20 @@ for i = 1:length(median_alt_row1)%length(suitable_rows)%length(alt_lim)-1
         windowOverlap = N_1 - round(window_overlap_seconds/T);%overlap of 10 minutes; 10;
 %         [S_Eregion{i},F_Eregion{i},T_Eregion{i},P_Eregion{i}] = spectrogram(te_alt{i},hanning(N_1),windowOverlap,f,Fs,'yaxis'); %Calculate for E-region              
         [S_Fregion{i,j},F_Fregion{i,j},T_Fregion{i,j},P_Fregion{i,j}] = spectrogram(interp_data.(variables{j})(row_interest(i),:),hamming(N_1),windowOverlap,f,Fs,'yaxis'); %Calculate for F-region   
-        powerspectrum{i,j} = 10*log10(P_Fregion{i,j});
+        idx_freq_pc5 = find(F_Fregion{i,j}> 0.6e-3 & F_Fregion{i,j}<7e-3);
+        powerspectrum{i,j} = 10*log10(P_Fregion{i,j}(idx_freq_pc5,:));
         max_power(i,j) = max(powerspectrum{i,j},[],'all');
         min_power(i,j) = min(powerspectrum{i,j},[],'all');
 
     end
 end
+% idx_freq_pc5{i,j} = find(F_Fregion{i,j}> 0.6e-3 & F_Fregion{i,j}<7e-3); %between 0.6 and 7.0 mHz
+
 
 for i = 1:length(median_alt_row1)%length(suitable_rows)%length(alt_lim)-1
     for j = parameters_of_interest % 1:length(variables)
         for k = 5:size(powerspectrum{i,j},2)-5
-            [pks{i,j,k},locs{i,j,k}] = findpeaks(powerspectrum{i,j}(:,k), F_Fregion{i,j},'MinPeakHeight',max(powerspectrum{i,j},[],'all')-10,'MinPeakProminence',7); %IDEA: ONLY USE THE MAXIMUM POWER WITHIN A 3 HOUR INTERVAL AROUND THE POINT K
+            [pks{i,j,k},locs{i,j,k}] = findpeaks(powerspectrum{i,j}(:,k), F_Fregion{i,j}(idx_freq_pc5),'MinPeakHeight',max(powerspectrum{i,j},[],'all')-10,'MinPeakProminence',7); %IDEA: ONLY USE THE MAXIMUM POWER WITHIN A 3 HOUR INTERVAL AROUND THE POINT K
         end
         %determine which unit of time is needed for the x-axis
         lab = 'Time (secs)';
@@ -348,9 +351,14 @@ for i = 1:length(median_alt_row1)%length(suitable_rows)%length(alt_lim)-1
         TT_Fregion_datetime{i,j} = NaN_data.Time_datetime(1,1) + hours(T_Fregion{i,j});
         formatOut = 'HH:mm:ss';
         Time1 = datenum(TT_Fregion_datetime{i,j});
+        %%
+        integrated_power = bandpower(powerspectrum{i,j},F_Fregion{i,j}(idx_freq_pc5),'psd');
+        integrated_power1 = bandpower(P_Fregion{i,j}(idx_freq_pc5,:),F_Fregion{i,j}(idx_freq_pc5),'psd'); %bandpower(powerspectrum{i,j},F_Fregion{i,j}(idx_freq_pc5),[0.6e-3 7e-3],'psd');
+%%
+%         integrated_power{i,j} = sum(powerspectrum{i,j});
 
         figure()
-        h = imagesc(datenum(TT_Fregion_datetime{i,j}),F_Fregion{i,j}*1000,10*log10(P_Fregion{i,j}));%datenum(TT_Fregion_datetime),F_Fregion,10*log10(P_Fregion));
+        h = imagesc(datenum(TT_Fregion_datetime{i,j}),F_Fregion{i,j}(idx_freq_pc5,:)*1000,powerspectrum{i,j});%10*log10(P_Fregion{i,j}));%datenum(TT_Fregion_datetime),F_Fregion,10*log10(P_Fregion));
         xlabel('Time')
         ylabel('Frequency (mHz)')
         ylim([0 1000/120])
@@ -373,6 +381,7 @@ for i = 1:length(median_alt_row1)%length(suitable_rows)%length(alt_lim)-1
             end
         end
 %         clear Time1
+            
     end
 end
 %% plot the peaks for all altitudes
