@@ -237,15 +237,7 @@ xlabel(['Time [UT] ',num2str(y(1))],'FontSize', 8,'FontName','Arial')
 
 for i = 2:5 %only apply the high pass filter for ne, te, ti and vi (NOT for alt, Time and Time_datetime)
     for j = 1:size(NaN_data.(variables{i}),1)
-        for k = 5:length(NaN_data.(variables{i}))-5
-            filtered_data.(variables{i})(j,k) = NaN_data.(variables{i})(j,k) - median(NaN_data.(variables{i})(j,k-4:k+5),'omitnan');
-        end
-        for k = 1:4
-            filtered_data.(variables{i})(j,k) = NaN_data.(variables{i})(j,k) - median(NaN_data.(variables{i})(j,1:10),'omitnan');
-        end
-        for k = length(NaN_data.(variables{i}))-4:length(NaN_data.(variables{i}))
-            filtered_data.(variables{i})(j,k) = NaN_data.(variables{i})(j,k) - median(NaN_data.(variables{i})(j,length(NaN_data.(variables{i}))-9:end),'omitnan');
-        end
+        filtered_data.(variables{i}).(str_region{j}) = poi_averaged.(variables{i}).(str_region{j}) - movmean(poi_averaged.(variables{i}).(str_region{j}),10);
     end
 end
 

@@ -1,13 +1,15 @@
 clear all
 close all
 
-filename_txt_10sec = 'C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\ULF_waves_events_currently_unexamined\2017_12_18\magnetometer\image_20171218.txt\image_20171218.txt';
-filename_Lisa2017 = 'C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\Paper_Lisa_2017\magnetometer\image_20071227.txt';
+filename_txt_10sec = 'C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\Test_data\Pilipenko2014\image_20031031.txt';
+% filename_txt_10sec = 'C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\ULF_waves_events_currently_unexamined\2017_12_18\magnetometer\image_20171218.txt\image_20171218.txt';
+% filename_Lisa2017 = 'C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\Paper_Lisa_2017\magnetometer\image_20071227.txt';
 %% txt
 % fid=fopen(filename_txt_10sec);
 % cdata=textscan(fid,'%s','delimiter','\n', 'HeaderLines', 1 );
 % fclose(fid);
-fid = fopen(filename_Lisa2017);
+fid = fopen(filename_txt_10sec);
+% fid = fopen(filename_Lisa2017);
 line1 = fgets(fid);
 fclose(fid);
 header = split(line1)';
@@ -48,10 +50,12 @@ for i = 1:length(stations)
 end
 
 %% Time period of interest
-n1 = datetime(2017,12,18,02,00,00);
-n2 = datetime(2017,12,18,07,00,00);
+% n1 = datetime(2017,12,18,02,00,00);
+% n2 = datetime(2017,12,18,07,00,00);
 % n1 = datetime(2007,12,27,15,00,00);
 % n2 = datetime(2007,12,27,17,30,00);
+n1 = datetime(2003,10,31,11,00,00); %in case of limited time
+n2 = datetime(2003,10,31,12,00,00); %in case of limited time
 n11 = find(ismember(mag_data.time,n1)==1);
 n22 = find(ismember(mag_data.time,n2)==1);
 
@@ -67,12 +71,11 @@ end
 
 %% Plot original and filtered signals
 figure()
-plot(poi.time,poi.NAL.bandpass_X)
 hold on
-plot(poi.time,poi.LYR.bandpass_X)
-plot(poi.time,poi.HOR.bandpass_X)
-plot(poi.time,poi.BJN.bandpass_X)
-legend('NAL','LYR','HOR','BJN')
+for i = 1:length(stations)
+plot(poi.time,poi.(stations{i}).bandpass_X)
+end
+legend(stations{:})
 title('Bandpass filtered X-component magnetometer')
 % legend('original','bandpass filter')
 
@@ -81,7 +84,7 @@ f = linspace(0,Fs/2,181);%500);
 windowLength = 3600/T;
 windowOverlap = windowLength - 600/T;
 L = length(poi.time);
-for i = 4%1:length(stations) %[5 10 11 12]%
+for i = 1:length(stations) %[5 10 11 12]%
 %     [S{i},F{i},TT{i},P_x{i}] = spectrogram(poi.(stations{i}).filtered_dbn_geo,hamming(windowLength),windowOverlap,f,Fs,'yaxis');
     [S_x{i},F_x{i},TT_x{i},P_x{i}] = spectrogram(poi.(stations{i}).bandpass_X,hamming(windowLength),windowOverlap,f,Fs,'yaxis');
     [S_y{i},F_y{i},TT_y{i},P_y{i}] = spectrogram(poi.(stations{i}).bandpass_Y,hamming(windowLength),windowOverlap,f,Fs,'yaxis');
@@ -113,7 +116,7 @@ for i = 4%1:length(stations) %[5 10 11 12]%
     xlabel('Time')
     ylabel('Frequency (mHz)')
     ylim([0 1000/120])
-    caxis([0 60])
+%     caxis([0 60])
     datetick('x',13,'keeplimits')
     set(gca,'YDir','normal');
     set(get(colorbar,'label'),'FontSize', 12,'string','(dB/Hz)')
@@ -133,7 +136,7 @@ for i = 4%1:length(stations) %[5 10 11 12]%
     xlabel('Time')
     ylabel('Frequency (mHz)')
     ylim([0 1000/120])
-    caxis([0 60])
+%     caxis([0 60])
     datetick('x',13,'keeplimits')
     set(gca,'YDir','normal');
     set(get(colorbar,'label'),'FontSize', 12,'string','(dB/Hz)')
@@ -153,7 +156,7 @@ for i = 4%1:length(stations) %[5 10 11 12]%
     xlabel('Time')
     ylabel('Frequency (mHz)')
     ylim([0 1000/120])
-    caxis([0 60])
+%     caxis([0 60])
     datetick('x',13,'keeplimits')
     set(gca,'YDir','normal');
     set(get(colorbar,'label'),'FontSize', 12,'string','(dB/Hz)')
@@ -198,7 +201,7 @@ for i = 1:length(stations)
     
     figure()
     plot(fft_f{i},fft_P1{i})
-    title(strcat(stations{i},'; Single-Sided Amplitude Spectrum of X(t)'))
+    title(strcat(stations{i},'; Single-Sided Amplitude Spectrum'))
     hold on
     plot(fft_f_Y{i},fft_P1_Y{i})
 %     hold on
@@ -206,6 +209,7 @@ for i = 1:length(stations)
 % %     plot(f_power{i},power{i})
     xlabel('f (Hz)')
     ylabel('|P1(f)|')
+    legend('X','Y')
     xlim([0 5e-3])
 end
 

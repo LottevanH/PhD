@@ -1,8 +1,9 @@
 clear all
 close all
 
-filename_txt_10sec = 'C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\ULF_waves_events_currently_unexamined\2017_12_18\magnetometer\image_20171218.txt\image_20171218.txt';
-filename_Lisa2017 = 'C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\Paper_Lisa_2017\magnetometer\image_20071227.txt';
+filename_txt_10sec = 'C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\Test_da\image_20171218.txt\image_20171218.txt';
+% filename_txt_10sec = 'C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\ULF_waves_events_currently_unexamined\2017_12_18\magnetometer\image_20171218.txt\image_20171218.txt';
+% filename_Lisa2017 = 'C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\Paper_Lisa_2017\magnetometer\image_20071227.txt';
 %% txt
 % fid=fopen(filename_txt_10sec);
 % cdata=textscan(fid,'%s','delimiter','\n', 'HeaderLines', 1 );
@@ -73,7 +74,7 @@ plot(poi.time,poi.LYR.bandpass_X)
 plot(poi.time,poi.HOR.bandpass_X)
 plot(poi.time,poi.BJN.bandpass_X)
 legend('NAL','LYR','HOR','BJN')
-title('Bandpass filtered X-component magnetometer')1
+title('Bandpass filtered X-component magnetometer')
 % legend('original','bandpass filter')
 
 %% Spectrogram
@@ -81,7 +82,7 @@ f = linspace(0,Fs/2,181);%500);
 windowLength = 3600/T;
 windowOverlap = windowLength - 600/T;
 L = length(poi.time);
-for i = 1:length(stations) %[5 10 11 12]%
+for i = 4%1:length(stations) %[5 10 11 12]%
 %     [S{i},F{i},TT{i},P_x{i}] = spectrogram(poi.(stations{i}).filtered_dbn_geo,hamming(windowLength),windowOverlap,f,Fs,'yaxis');
     [S_x{i},F_x{i},TT_x{i},P_x{i}] = spectrogram(poi.(stations{i}).bandpass_X,hamming(windowLength),windowOverlap,f,Fs,'yaxis');
     [S_y{i},F_y{i},TT_y{i},P_y{i}] = spectrogram(poi.(stations{i}).bandpass_Y,hamming(windowLength),windowOverlap,f,Fs,'yaxis');
@@ -102,14 +103,14 @@ for i = 1:length(stations) %[5 10 11 12]%
 
     %find peaks
     for k = 5:size(powerspectrum_x{i},2)-5
-        [pks_x{i,k},locs_x{i,k}] = findpeaks(powerspectrum_x{i}(:,k), F{i},'MinPeakHeight',max(powerspectrum_x{i}(:,k-4:k+4),[],'all')-10,'MinPeakProminence',7); %IDEA: ONLY USE THE MAXIMUM POWER WITHIN A 3 HOUR INTERVAL AROUND THE POINT K
-        [pks_y{i,k},locs_y{i,k}] = findpeaks(powerspectrum_y{i}(:,k), F{i},'MinPeakHeight',max(powerspectrum_y{i}(:,k-4:k+4),[],'all')-10,'MinPeakProminence',7); %IDEA: ONLY USE THE MAXIMUM POWER WITHIN A 3 HOUR INTERVAL AROUND THE POINT K
-        [pks_z{i,k},locs_z{i,k}] = findpeaks(powerspectrum_z{i}(:,k), F{i},'MinPeakHeight',max(powerspectrum_z{i}(:,k-4:k+4),[],'all')-10,'MinPeakProminence',7); %IDEA: ONLY USE THE MAXIMUM POWER WITHIN A 3 HOUR INTERVAL AROUND THE POINT K  
+        [pks_x{i,k},locs_x{i,k}] = findpeaks(powerspectrum_x{i}(:,k), F_x{i},'MinPeakHeight',max(powerspectrum_x{i}(:,k-4:k+4),[],'all')-10,'MinPeakProminence',7); %IDEA: ONLY USE THE MAXIMUM POWER WITHIN A 3 HOUR INTERVAL AROUND THE POINT K
+        [pks_y{i,k},locs_y{i,k}] = findpeaks(powerspectrum_y{i}(:,k), F_y{i},'MinPeakHeight',max(powerspectrum_y{i}(:,k-4:k+4),[],'all')-10,'MinPeakProminence',7); %IDEA: ONLY USE THE MAXIMUM POWER WITHIN A 3 HOUR INTERVAL AROUND THE POINT K
+        [pks_z{i,k},locs_z{i,k}] = findpeaks(powerspectrum_z{i}(:,k), F_z{i},'MinPeakHeight',max(powerspectrum_z{i}(:,k-4:k+4),[],'all')-10,'MinPeakProminence',7); %IDEA: ONLY USE THE MAXIMUM POWER WITHIN A 3 HOUR INTERVAL AROUND THE POINT K  
     end
     Time1 = datenum(TT_datetime{i});
     
     figure()
-    h = imagesc(datenum(TT_datetime{i}),F{i}*1000,powerspectrum_x{i}); 
+    h = imagesc(datenum(TT_datetime{i}),F_x{i}*1000,powerspectrum_x{i}); 
     xlabel('Time')
     ylabel('Frequency (mHz)')
     ylim([0 1000/120])
@@ -117,13 +118,53 @@ for i = 1:length(stations) %[5 10 11 12]%
     datetick('x',13,'keeplimits')
     set(gca,'YDir','normal');
     set(get(colorbar,'label'),'FontSize', 12,'string','(dB/Hz)')
-    title(stations{i})
+    title(strcat(stations{i},'; X-component'))
     
 
     hold on 
     for k = 5:size(powerspectrum_x{i},2)-5 
         if isempty(locs_x{i,k}) == 0
             plot(Time1(k),locs_x{i,k}*1000,'.r')
+        else ;
+        end
+    end
+    
+    figure()
+    h = imagesc(datenum(TT_datetime{i}),F_y{i}*1000,powerspectrum_y{i}); 
+    xlabel('Time')
+    ylabel('Frequency (mHz)')
+    ylim([0 1000/120])
+    caxis([0 60])
+    datetick('x',13,'keeplimits')
+    set(gca,'YDir','normal');
+    set(get(colorbar,'label'),'FontSize', 12,'string','(dB/Hz)')
+    title(strcat(stations{i},'; Y-component'))
+    
+
+    hold on 
+    for k = 5:size(powerspectrum_y{i},2)-5 
+        if isempty(locs_y{i,k}) == 0
+            plot(Time1(k),locs_y{i,k}*1000,'.r')
+        else ;
+        end
+    end
+
+    figure()
+    h = imagesc(datenum(TT_datetime{i}),F_z{i}*1000,powerspectrum_z{i}); 
+    xlabel('Time')
+    ylabel('Frequency (mHz)')
+    ylim([0 1000/120])
+    caxis([0 60])
+    datetick('x',13,'keeplimits')
+    set(gca,'YDir','normal');
+    set(get(colorbar,'label'),'FontSize', 12,'string','(dB/Hz)')
+    title(strcat(stations{i},'; Z-component'))
+    
+
+    hold on 
+    for k = 5:size(powerspectrum_z{i},2)-5 
+        if isempty(locs_z{i,k}) == 0
+            plot(Time1(k),locs_z{i,k}*1000,'.r')
         else ;
         end
     end
