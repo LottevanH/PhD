@@ -16,13 +16,13 @@ addpath('C:\Github\PhD\functions');
 
 
 %% specify which filename to process
-% filename = 'C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\Test_data\beata_60\EISCAT_2009-09-15_beata_60@uhfa.hdf5';
+% filename = 'C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\Test_data\beata_60\EISCAT_2009-09-15_beata_60@uhfa.hdf5'; % heating experiment
 filename = 'C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\Test_data\Pilipenko2014\EISCAT_2003-10-31_tau2pl_60@uhf.hdf5';
 
 %% specify regions and parameters
 
 parameters_of_interest = [2,3,4];%3; where the numbers correspond to {'alt','ne','te','ti','vi','Time','Time_datetime'}; %for struct setup 
-regions_of_interest = [1,2]; %1 = E-region1, 2 = E-region2, 3 = F-region
+regions_of_interest = 1;%[1,2]; %1 = E-region1, 2 = E-region2, 3 = F-region
 %% extract variables and get metadeta info
 [Time,par2D,par1D,rpar2D,err2D,errs2d]=load_param_hdf5(filename);
 metadata_par2d = deblank(h5read(filename,'/metadata/par2d')); %to see which variables are available. In the load_param_hdf5 script the parameters saved for the par2d parameter are given.
@@ -105,8 +105,8 @@ xlabel(['Time [UT] ',num2str(y(1))],'FontSize', 8,'FontName','Arial')
  
 %% Time period of interest 
 %analyse from one hour before start interesting event
-n11 = datenum(datetime(2003,10,31,10,30,00)); %in case of limited time
-n22 = datenum(datetime(2003,10,31,12,30,00)); %in case of limited time
+% n11 = datenum(datetime(2003,10,31,10,00,00)); %in case of limited time
+% n22 = datenum(datetime(2003,10,31,15,00,00)); %in case of limited time
 n11 = n1;
 n22 = n2;
 
@@ -158,6 +158,23 @@ for i = 1:size(poi_sorted.Time_datetime,2)-1
 end
 
 idx_time_gap = find(delta_T > median(delta_T)+seconds(15)); %find time gaps if there are any
+
+if isempty(idx_time_gap) == 0
+    if idx_time_gap(1) == 1 %make sure that the data set does not start with a time gap
+        length_gap = find(delta_T > median(delta_T)-seconds(1),2);
+        for j = 1:length(variables)
+            poi_sorted.(variables{j})(:,1:length_gap(2)) = [];
+        end
+        clear idx_time_gap delta_T
+        for i = 1:size(poi_sorted.Time_datetime,2)-1
+            delta_T(i) = poi_sorted.Time_datetime(1,i+1) - poi_sorted.Time_datetime(1,i);
+        end
+        idx_time_gap = find(delta_T > median(delta_T)+seconds(15)); %find time gaps if there are any
+        else 
+    end
+else 
+end
+
 for j = 1:length(variables)
     if length(idx_time_gap) == 1
         i = 1;
@@ -249,10 +266,10 @@ xlabel(['Time [UT] ',num2str(y(1))],'FontSize', 8,'FontName','Arial')
 
 
 
-%% Average over E and F region
-E_lower_lim = 90; %80
+%% Average (median) over E and F region
+E_lower_lim = 90;%90; %80
 % E_mid_lim = 110; %110
-F_lower_lim = 150;
+F_lower_lim = 150;%150;
 F_high_lim = 350;
 str_region = {'Eregion','Fregion'};%{'Eregion1','Eregion2','Fregion'};
 for i = 2:5
@@ -316,27 +333,33 @@ for i = regions_of_interest %1:length(str_region)
         min_time = datetime(input_locs1{i,j},'ConvertFrom','datenum');
         delta_T_pks.(str_region{i}).(variables{j}) = diff(pks_time);
         delta_T_min.(str_region{i}).(variables{j}) = diff(min_time);
-        fig = figure();
-        title(strcat([variables{j},'; ',str_region{i},'; ',datestr(NaN_data.Time_datetime(1),'yyyy-mm-dd')]))
-        
+        fig = figure();      
         left_color = [1 0 0];
         right_color = [0 0 0];
-        
-        yyaxis left
-        plot(interp_data.Time(1,:),interp_data.(variables{j}).(str_region{i}))
+%         set(fig,'defaultAxesColorOrder',[left_color; right_color]);
+        title(strcat([variables{j},'; ',str_region{i},'; ',datestr(NaN_data.Time_datetime(1),'yyyy-mm-dd')]))
+%         yyaxis left
+        plot(interp_data.Time(1,:),interp_data.(variables{j}).(str_region{i}),'k')
         ylabel('Filtered input','FontSize', 8,'FontName','Arial')
         hold on
         plot(interp_data.Time(1,1),0,'.k')
-        datetick('x',13,'keeplimits')
+%         NumTicks = 6;
+%         L = get(gca,'XLim');
+%         set(gca,'XTick',linspace(L(1),L(2),NumTicks))
+        datetick('x',13,'keeplimits')%,'keepticks')
+        
         xlim([n11 n22])
+        title(strcat([variables{j},'; ',str_region{i},'; ',datestr(NaN_data.Time_datetime(1),'yyyy-mm-dd')]))
         hold on
-        plot(input_locs_tot{i,j},input_pks_tot{i,j},'*g')
+        xline(datenum(datetime(2003,10,31,11,00,00)),'r')
+        xline(datenum(datetime(2003,10,31,12,00,00)),'r')
+%         plot(input_locs_tot{i,j},input_pks_tot{i,j},'*g')
 %         plot(input_locs_tot{i,j}(1:end-1),abs(amplitude{i,j}),'k')
-        yyaxis right
-        plot(interp_data.Time(1,:),modulation.(variables{j}).(str_region{i}),'.k')
-        ylabel('modulation')
-        legend('filtered signal','modulation')
-        set(fig,'defaultAxesColorOrder',[left_color; right_color]);
+%         yyaxis right
+%         plot(interp_data.Time(1,:),modulation.(variables{j}).(str_region{i}),'.k')
+%         ylabel('modulation')
+%         legend('filtered signal','modulation')
+
     end
 end
 
@@ -353,7 +376,7 @@ window_overlap_seconds = 600;
 for i = regions_of_interest %1:length(str_region)%length(suitable_rows)%length(alt_lim)-1
     for j = parameters_of_interest % 1:length(variables)
         if length(interp_data.(variables{j}).(str_region{i})) > window_length_seconds/T %meaning the period of interest is larger than 1 hour.
-            N_1 = round(window_length_seconds/T);%60; %to have a window length of 60 data points (\approx 1 hour)
+%             N_1 = %60; %to have a window length of 60 data points (\approx 1 hour)
         else %time period is shorter than 1 hour
             N_1 = length(interp_data.(variables{j}).(str_region{i}));
         end
@@ -393,7 +416,8 @@ for i = regions_of_interest %1:length(str_region)%length(suitable_rows)%length(a
         integrated_power = bandpower(powerspectrum{i,j},F_Fregion{i,j}(idx_freq_pc5),'psd');
         integrated_power1 = bandpower(P_Fregion{i,j}(idx_freq_pc5,:),F_Fregion{i,j}(idx_freq_pc5),'psd'); %bandpower(powerspectrum{i,j},F_Fregion{i,j}(idx_freq_pc5),[0.6e-3 7e-3],'psd');
 
-        figure()
+        fig = figure();
+        set(fig,'defaultAxesColorOrder',[right_color; right_color]);
         yyaxis left
         h = imagesc(datenum(TT_Fregion_datetime{i,j}),F_Fregion{i,j}(idx_freq_pc5,:)*1000,powerspectrum{i,j});%10*log10(P_Fregion{i,j}));%datenum(TT_Fregion_datetime),F_Fregion,10*log10(P_Fregion));
         xlabel('Time')
@@ -403,10 +427,11 @@ for i = regions_of_interest %1:length(str_region)%length(suitable_rows)%length(a
         title(strcat([variables{j},'; ',str_region{i},'; ',datestr(NaN_data.Time_datetime(1),'yyyy-mm-dd')]))
         colorbar;
         colormap parula
-        caxis([max(max_power(:,j))-70 max(max_power(:,j))])
+        caxis([max(max_power(:,j))-50 max(max_power(:,j))])
         set(gca,'YDir','normal');
         set(get(colorbar,'label'),'FontSize', 12,'string','(dB/Hz)')
-        datetick('x',13,'keeplimits')
+%         set(gca,'XTick',linspace(L(1),L(2),NumTicks))
+        datetick('x',13,'keeplimits')%,'keepticks')
 %         xlim([datenum(datetime(n11,'ConvertFrom','datenum')+seconds(window_length_seconds))
 %         datenum(datetime(n22,'ConvertFrom','datenum')-seconds(window_length_seconds))])
 %         %only works in case the period of interest exceeds 2 hours
@@ -417,6 +442,8 @@ for i = regions_of_interest %1:length(str_region)%length(suitable_rows)%length(a
             else ;
             end
         end
+        xline(datenum(datetime(2003,10,31,11,00,00)),'r')
+        xline(datenum(datetime(2003,10,31,12,00,00)),'r')
         yyaxis right
         plot(datenum(TT_Fregion_datetime{i,j}),integrated_power1,'k')
         ylabel('Integrated power')

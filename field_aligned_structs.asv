@@ -16,13 +16,13 @@ addpath('C:\Github\PhD\functions');
 
 
 %% specify which filename to process
-% filename = 'C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\Test_data\beata_60\EISCAT_2009-09-15_beata_60@uhfa.hdf5';
-filename = 'C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\Test_data\Pilipenko2014\EISCAT_2003-10-31_tau2pl_60@uhf.hdf5';
+filename = 'C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\Test_data\beata_60\EISCAT_2009-09-16_beata_60@uhfa.hdf5'; % heating experiment
+% filename = 'C:\Users\lotte\OneDrive - Universitetssenteret på Svalbard AS (1)\Svalbard\PhD\Data\Test_data\Pilipenko2014\EISCAT_2003-10-31_tau2pl_60@uhf.hdf5';
 
 %% specify regions and parameters
 
 parameters_of_interest = [2,3,4];%3; where the numbers correspond to {'alt','ne','te','ti','vi','Time','Time_datetime'}; %for struct setup 
-regions_of_interest = [1,2]; %1 = E-region, 2 = F-region
+regions_of_interest = [1,2]; %1 = E-region1, 2 = E-region2, 3 = F-region
 %% extract variables and get metadeta info
 [Time,par2D,par1D,rpar2D,err2D,errs2d]=load_param_hdf5(filename);
 metadata_par2d = deblank(h5read(filename,'/metadata/par2d')); %to see which variables are available. In the load_param_hdf5 script the parameters saved for the par2d parameter are given.
@@ -105,10 +105,10 @@ xlabel(['Time [UT] ',num2str(y(1))],'FontSize', 8,'FontName','Arial')
  
 %% Time period of interest 
 %analyse from one hour before start interesting event
-n11 = datenum(datetime(2003,10,31,10,30,00)); %in case of limited time
-n22 = datenum(datetime(2003,10,31,12,30,00)); %in case of limited time
-% n11 = n1;
-% n22 = n2;
+% n11 = datenum(datetime(2003,10,31,10,30,00)); %in case of limited time
+% n22 = datenum(datetime(2003,10,31,12,30,00)); %in case of limited time
+n11 = n1;
+n22 = n2;
 
 idx_time_start = find(Time(1,:) > n11,1);
 idx_time_end = find(Time(1,:) < n22,1,'last');
@@ -158,6 +158,22 @@ for i = 1:size(poi_sorted.Time_datetime,2)-1
 end
 
 idx_time_gap = find(delta_T > median(delta_T)+seconds(15)); %find time gaps if there are any
+
+if idx_time_gap(1) == 1 %make sure that the data set does not start with a time gap
+    length_gap = find(delta_T > median(delta_T)-seconds(1),2);
+    for j = 1:length(variables)
+        poi_sorted.(variables{i})(1:length_gap(2)) = [];
+    end
+    clear idx_time_gap delta_T
+    for i = 1:size(poi_sorted.Time_datetime,2)-1
+        delta_T(i) = poi_sorted.Time_datetime(1,i+1) - poi_sorted.Time_datetime(1,i);
+    end
+    idx_time_gap = find(delta_T > median(delta_T)+seconds(15)); %find time gaps if there are any
+
+idx_time_gap = find(delta_T > median(delta_T)+seconds(15)); %find time gaps if there are any
+else ;
+end
+
 for j = 1:length(variables)
     if length(idx_time_gap) == 1
         i = 1;
@@ -251,13 +267,13 @@ xlabel(['Time [UT] ',num2str(y(1))],'FontSize', 8,'FontName','Arial')
 
 %% Average over E and F region
 E_lower_lim = 90; %80
-E_mid_lim = 110; %110
+% E_mid_lim = 110; %110
 F_lower_lim = 150;
 F_high_lim = 350;
-str_region = {'Eregion','Fregion'};
+str_region = {'Eregion','Fregion'};%{'Eregion1','Eregion2','Fregion'};
 for i = 2:5
-    poi_averaged.(variables{i}).Eregion = nanmedian(NaN_data.(variables{i})(find(NaN_data.alt(:,1) > E_lower_lim & NaN_data.alt(:,1) < E_mid_lim),:));
-    poi_averaged.(variables{i}).Eregion = nanmedian(NaN_data.(variables{i})(find(NaN_data.alt(:,1) > E_lower_lim & NaN_data.alt(:,1) < E_mid_lim),:));
+    poi_averaged.(variables{i}).Eregion = nanmedian(NaN_data.(variables{i})(find(NaN_data.alt(:,1) > E_lower_lim & NaN_data.alt(:,1) < F_lower_lim),:));
+%     poi_averaged.(variables{i}).Eregion2 = nanmedian(NaN_data.(variables{i})(find(NaN_data.alt(:,1) > E_mid_lim & NaN_data.alt(:,1) < F_lower_lim),:));
     poi_averaged.(variables{i}).Fregion = nanmedian(NaN_data.(variables{i})(find(NaN_data.alt(:,1) > F_lower_lim & NaN_data.alt(:,1) < F_high_lim),:));
 end
 for i = 6:7
@@ -267,7 +283,7 @@ end
 %% High pass filter (subtract median value of sliding window of 10 minutes lenght for Pc5)
 for i = 2:5 %only apply the high pass filter for ne, te, ti and vi (NOT for alt, Time and Time_datetime)
     for j = regions_of_interest %1:length(str_region)
-        filtered_data.(variables{i}).(str_region{j}) = poi_averaged.(variables{i}).(str_region{j}) - movmean(poi_averaged.(variables{i}).(str_region{j}),10);
+        filtered_data.(variables{i}).(str_region{j}) = poi_averaged.(variables{i}).(str_region{j}) - movmean(poi_averaged.(variables{i}).(str_region{j}),20);
     end
 end
 
@@ -319,10 +335,9 @@ for i = regions_of_interest %1:length(str_region)
         fig = figure();
         title(strcat([variables{j},'; ',str_region{i},'; ',datestr(NaN_data.Time_datetime(1),'yyyy-mm-dd')]))
         
-        subplot(2,1,1);
         left_color = [1 0 0];
         right_color = [0 0 0];
-        set(fig,'defaultAxesColorOrder',[left_color; right_color]);
+        
         yyaxis left
         plot(interp_data.Time(1,:),interp_data.(variables{j}).(str_region{i}))
         ylabel('Filtered input','FontSize', 8,'FontName','Arial')
@@ -337,19 +352,7 @@ for i = regions_of_interest %1:length(str_region)
         plot(interp_data.Time(1,:),modulation.(variables{j}).(str_region{i}),'.k')
         ylabel('modulation')
         legend('filtered signal','modulation')
-        
-        subplot(2,1,2)
         set(fig,'defaultAxesColorOrder',[left_color; right_color]);
-        yyaxis left
-        plot(interp_data.Time(1,:),unfiltered_data.(variables{j}).(str_region{i}))
-        ylabel('Unfiltered input')
-        yyaxis right
-        plot(interp_data.Time(1,:),modulation.(variables{j}).(str_region{i}),'.k')
-        ylabel('modulation')
-        legend('filtered signal','modulation')
-        datetick('x',13,'keeplimits')
-        xlim([n11 n22])
-        clear pks_time min_time
     end
 end
 
@@ -402,13 +405,12 @@ for i = regions_of_interest %1:length(str_region)%length(suitable_rows)%length(a
         TT_Fregion_datetime{i,j} = NaN_data.Time_datetime(1,1) + hours(T_Fregion{i,j});
         formatOut = 'HH:mm:ss';
         Time1 = datenum(TT_Fregion_datetime{i,j});
-        %%
+  
         integrated_power = bandpower(powerspectrum{i,j},F_Fregion{i,j}(idx_freq_pc5),'psd');
         integrated_power1 = bandpower(P_Fregion{i,j}(idx_freq_pc5,:),F_Fregion{i,j}(idx_freq_pc5),'psd'); %bandpower(powerspectrum{i,j},F_Fregion{i,j}(idx_freq_pc5),[0.6e-3 7e-3],'psd');
-%%
-%         integrated_power{i,j} = sum(powerspectrum{i,j});
 
         figure()
+        yyaxis left
         h = imagesc(datenum(TT_Fregion_datetime{i,j}),F_Fregion{i,j}(idx_freq_pc5,:)*1000,powerspectrum{i,j});%10*log10(P_Fregion{i,j}));%datenum(TT_Fregion_datetime),F_Fregion,10*log10(P_Fregion));
         xlabel('Time')
         ylabel('Frequency (mHz)')
@@ -431,6 +433,9 @@ for i = regions_of_interest %1:length(str_region)%length(suitable_rows)%length(a
             else ;
             end
         end
+        yyaxis right
+        plot(datenum(TT_Fregion_datetime{i,j}),integrated_power1,'k')
+        ylabel('Integrated power')
 %         clear Time1
             
     end
