@@ -442,8 +442,8 @@ for i = regions_of_interest %1:length(str_region)%length(suitable_rows)%length(a
             else ;
             end
         end
-        xline(datenum(datetime(2003,10,31,11,00,00)),'r')
-        xline(datenum(datetime(2003,10,31,12,00,00)),'r')
+%         xline(datenum(datetime(2003,10,31,11,00,00)),'r')
+%         xline(datenum(datetime(2003,10,31,12,00,00)),'r')
         yyaxis right
         plot(datenum(TT_Fregion_datetime{i,j}),integrated_power1,'k')
         ylabel('Integrated power')
